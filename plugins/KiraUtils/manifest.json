@@ -1,0 +1,20 @@
+{
+  "name": "KiraUtils",
+  "description": "A maintained collection of chat, UI, privacy, and quality-of-life utilities for Revenge/Kettu-based clients.",
+  "version": "2.0.0",
+  "main": "index.js",
+  "authors": [
+    {
+      "name": "Kira",
+      "id": "925904715525554206"
+    },
+    {
+      "name": "Angelica (original AzzyUtils author)",
+      "id": "692632336961110087"
+    }
+  ],
+  "vendetta": {
+    "icon": "ic_progress_wrench_24px"
+  },
+  "upstream": "https://github.com/Angelix1/MP"
+}
