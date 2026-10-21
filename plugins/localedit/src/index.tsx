@@ -361,7 +361,7 @@ function load(): void {
     }
     patchActionSheet();
     applyToLoaded();
-    console.log("[localedit] Loaded v1.2.1. Look for Edit Locally in another person's long-press menu.");
+    console.log("[localedit] Loaded v1.2.2. Look for Edit Locally in another person's long-press menu.");
 }
 
 export default {
