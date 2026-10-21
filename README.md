@@ -84,6 +84,11 @@ Shows extra tags for staff members. KiraUtils includes an opt-in integrated vers
 
 Install: https://shipwr3ckd.github.io/revengeplugin/staff-tags
 
+### Hidden Channels
+Shows channel content that is already cached locally when normal permission checks hide the channel. It cannot grant server permissions or fetch content the client does not have.
+
+Install: https://lioncat6.github.io/revenge-plugins/hidden-channels/
+
 ### FakeProfileThemesAndEffects
 Enables profile theming and profile effects by hiding colors and effect IDs in the About Me section using invisible, zero-width characters.
 
