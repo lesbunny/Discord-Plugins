@@ -185,7 +185,7 @@ function patchActionSheet(): void {
         return;
     }
 
-    patches.push(before(LazyActionSheet, "openLazy", ([component, key, props]: any[]) => {
+    patches.push(before("openLazy", LazyActionSheet, ([component, key, props]: any[]) => {
         const acceptedKeys = new Set([
             "MessageLongPressActionSheet",
             "MessageLongPressActionSheetV2",
@@ -201,7 +201,7 @@ function patchActionSheet(): void {
             if (!instance || typeof instance.default !== "function") return;
 
             let unpatch: (() => void) | undefined;
-            unpatch = after(instance, "default", (_args: any[], rendered: any) => {
+            unpatch = after("default", instance, (_args: any[], rendered: any) => {
                 if (unpatch) {
                     // The menu is rendered on demand; remove this temporary render patch immediately.
                     setTimeout(unpatch, 0);
@@ -258,13 +258,13 @@ function patchMessageStore(): void {
     }
 
     if (typeof MessageStore.getMessage === "function") {
-        patches.push(after(MessageStore, "getMessage", ([channelId, messageId]: any[], result: any) => {
+        patches.push(after("getMessage", MessageStore, ([channelId, messageId]: any[], result: any) => {
             return overlayLocalEdit(result, channelId ?? result?.channel_id ?? messageId);
         }));
     }
 
     if (typeof MessageStore.getMessages === "function") {
-        patches.push(after(MessageStore, "getMessages", (_args: any[], result: any) => {
+        patches.push(after("getMessages", MessageStore, (_args: any[], result: any) => {
             try {
                 if (Array.isArray(result)) {
                     return result.map((message: any) => overlayLocalEdit(message));
@@ -295,7 +295,7 @@ function patchMessageEditor(): void {
         return;
     }
 
-    patches.push(before(Messages, "editMessage", (args: any[]) => {
+    patches.push(before("editMessage", Messages, (args: any[]) => {
         if (!activeEdit) return;
 
         const arg0 = args?.[0];
@@ -364,7 +364,7 @@ function patchMessageEditor(): void {
     }));
 
     if (typeof Messages.endEditMessage === "function" && typeof after === "function") {
-        patches.push(after(Messages, "endEditMessage", () => {
+        patches.push(after("endEditMessage", Messages, () => {
             activeEdit = null;
         }));
     }
