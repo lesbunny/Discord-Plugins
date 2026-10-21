@@ -33,7 +33,7 @@ const getEdit = (id: string): LocalEdit | undefined => edits()[String(id)];
 
 function findSingleExport(prop: string): any {
     try {
-        const finder = (globalThis as any).vendetta?.metro?.find;
+        const finder = vendetta?.metro?.find;
         const module = typeof finder === "function"
             ? finder((m: any) => m?.[prop] && Object.keys(m).length === 1)
             : null;
