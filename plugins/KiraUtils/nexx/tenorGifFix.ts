@@ -4,21 +4,15 @@ import { before } from "@vendetta/patcher";
 // Adapted from NexxUtils by nexpid; see THIRD_PARTY_NOTICES.md.
 function parseTenorGifURL(url: unknown): string | undefined {
     if (typeof url !== "string") return;
-    try {
-        const parsed = new URL(url);
-        if (!parsed.hostname.endsWith(".tenor.com")) return;
-        const path = parsed.pathname.split("/").filter(Boolean);
-        const idIndex = path.findIndex(part => /^[A-Za-z0-9_-]{5,}$/.test(part) && /[0-9]/.test(part));
-        if (idIndex < 0 || idIndex >= path.length - 1) return;
-        const id = path[idIndex];
-        const filename = path[path.length - 1].split(".")[0];
-        if (!filename) return;
-        // Legacy Tenor URLs use the "AC" rendition marker for their original GIF rendition.
-        const baseId = id.endsWith("AC") ? id : id.replace(/(?:MP4|WEBM)$/i, "");
-        return `https://${parsed.hostname}/${baseId}/${filename}.gif`;
-    } catch {
-        return;
-    }
+    const segments = url.split("/");
+    const hostIndex = segments.findIndex(segment => segment.endsWith(".tenor.com"));
+    if (hostIndex < 0) return;
+    const [host, id, file] = segments.slice(hostIndex, hostIndex + 3);
+    if (!host || !id || !file) return;
+    const filename = file.split(".")[0];
+    if (!filename) return;
+    // Preserve NexxUtils' original Tenor rendition mapping for MP4-backed GIF links.
+    return `https://${host}/${id.slice(0, -2)}AC/${filename}.gif`;
 }
 
 export default function tenorGifFix(): () => void {
