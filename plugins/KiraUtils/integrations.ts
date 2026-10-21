@@ -343,7 +343,8 @@ export function startLocalEdit() {
     const cleanups = [];
     const dispatcher = FluxDispatcher;
     const actionSheet = safeFind(findByProps, "openLazy", "hideActionSheet");
-    const messageActions = safeFind(findByProps, "startEditMessage", "editMessage");
+    const startActions = safeFind(findByProps, "startEditMessage");
+    const editActions = safeFind(findByProps, "editMessage") ?? startActions;
     const messageStore = safeFind(findByStoreName, "MessageStore") || safeFind(findByProps, "getMessage", "getMessages");
     let pending = null;
     let oldEditMessage = null;
@@ -352,8 +353,8 @@ export function startLocalEdit() {
 
     const edits = () => (storage.localEdits ??= {});
     const restoreEditMethod = () => {
-        if (messageActions && oldEditMessage && messageActions.editMessage === wrappedEditMessage) {
-            messageActions.editMessage = oldEditMessage;
+        if (editActions && oldEditMessage && editActions.editMessage === wrappedEditMessage) {
+            editActions.editMessage = oldEditMessage;
         }
         oldEditMessage = null;
         wrappedEditMessage = null;
@@ -394,13 +395,13 @@ export function startLocalEdit() {
     }));
 
     const beginEdit = message => {
-        if (!messageActions?.startEditMessage || !messageActions?.editMessage) {
+        if (!startActions?.startEditMessage || !editActions?.editMessage) {
             showToast("Native edit composer is unavailable in this client.");
             return;
         }
         clearPending();
-        pending = { message, id: messageId(message), channelId: channelId(message) };
-        oldEditMessage = messageActions.editMessage;
+        pending = { message, id: messageId(message), channelId: channelId(message), actions: editActions };
+        oldEditMessage = editActions.editMessage;
         wrappedEditMessage = function (...args) {
             const target = pending;
             const passedChannel = String(args?.[0] ?? "");
@@ -418,9 +419,9 @@ export function startLocalEdit() {
             } catch {}
             return Promise.resolve();
         };
-        messageActions.editMessage = wrappedEditMessage;
+        editActions.editMessage = wrappedEditMessage;
         cancelTimeout = setTimeout(clearPending, 120000);
-        try { messageActions.startEditMessage(pending.channelId, pending.id, String(getLocalEdit(pending.id) ?? message.content ?? "")); }
+        try { startActions.startEditMessage(pending.channelId, pending.id, String(getLocalEdit(pending.id) ?? message.content ?? "")); }
         catch (error) {
             clearPending();
             console.error("[KiraUtils/LocalEdit] Could not enter native edit composer.", error);
