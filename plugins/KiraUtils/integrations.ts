@@ -1,10 +1,12 @@
 import { storage } from "@vendetta/plugin";
-import { findByName, findByProps, findByStoreName } from "@vendetta/metro";
+import { findByName, findByProps, findByStoreName, findByTypeName } from "@vendetta/metro";
 import { after, before, instead } from "@vendetta/patcher";
 import { React, ReactNative, FluxDispatcher, constants } from "@vendetta/metro/common";
 import { findInReactTree } from "@vendetta/utils";
-import { getAssetIDByName } from "@vendetta/ui/assets";
+import { getAssetByID, getAssetIDByName } from "@vendetta/ui/assets";
 import { showToast } from "@vendetta/ui/toasts";
+import { registerCommand } from "@vendetta/commands";
+import { startValidUser } from "./validUser";
 
 const safeFind = (fn, ...args) => {
     try { return typeof fn === "function" ? fn(...args) : null; } catch { return null; }
@@ -286,16 +288,17 @@ export function startCatbox(): () => void {
 
 export function startHiddenChannels() {
     const cleanups = [];
-    const module = safeFind(findByProps, "getChannelPermissions", "can") || safeFind(findByProps, "can", "initialize");
+    const module = safeFind(findByProps, "getChannelPermissions", "can");
     const channelStore = safeFind(findByStoreName, "ChannelStore") || safeFind(findByProps, "getChannel");
     const channelTypes = safeFind(findByProps, "ChannelTypes")?.ChannelTypes || {};
     const permissions = constants?.Permissions || safeFind(findByProps, "Permissions")?.Permissions || {};
     const viewChannel = permissions.VIEW_CHANNEL;
     if (!module || typeof module.can !== "function" || viewChannel == null) {
-        console.warn("[KiraUtils/HiddenChannels] Permission module is unavailable on this client.");
+        console.warn("[KiraUtils/HiddenChannels] Exact channel-permissions API is unavailable; feature was not enabled.");
         return () => {};
     }
     storage.hiddenChannelsShowIcon ??= true;
+    storage.hiddenChannelsShowPopup ??= true;
     storage.hiddenChannelsShowPopup ??= true;
 
     const isHidden = channelOrId => {
@@ -342,19 +345,6 @@ export function startHiddenChannels() {
         }
     } else {
         console.warn("[KiraUtils/HiddenChannels] transitionToGuild is unavailable on this client.");
-    }
-    {
-        const ChannelInfo = safeFind(findByName, "ChannelInfo", false);
-        if (ChannelInfo) cleanups.push(after("default", ChannelInfo, ([props], rendered) => {
-            if (!storage.hiddenChannelsShowIcon || !props?.channel || !isHidden(props.channel)) return rendered;
-            return React.createElement(React.Fragment, null,
-                React.createElement(ReactNative.Image, {
-                    source: getAssetIDByName("ic_lock"),
-                    style: { width: 20, height: 20, marginRight: 4 }
-                }),
-                rendered
-            );
-        }));
     }
     return () => cleanupAll(cleanups);
 }
