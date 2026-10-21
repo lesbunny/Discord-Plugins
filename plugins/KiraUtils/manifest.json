@@ -1,7 +1,7 @@
 {
   "name": "KiraUtils",
-  "description": "Kira's all-in-one utility collection for Revenge/Kettu clients: message filtering, profile bio copying, Catbox uploads, silent messages, anonymous filenames, hidden channels, local editing, staff tags and NexxUtils-inspired fixes.",
-  "version": "2.2.0",
+  "description": "All-in-one toggleable utility collection: Hide Blocked/ignored, Copy Bios, catbox.moe, Silent Messages, Anonymous File Names, Hidden Channels, Local Edit with optional restart cleanup, Staff Tags, Tenor GIF Fix, MiniMod and original AzzyUtils utilities.",
+  "version": "2.3.0",
   "main": "index.js",
   "authors": [
     {
