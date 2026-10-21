@@ -1,6 +1,6 @@
 import { storage } from "@vendetta/plugin";
 import { findByName, findByProps, findByStoreName } from "@vendetta/metro";
-import { after, before } from "@vendetta/patcher";
+import { after, before, instead } from "@vendetta/patcher";
 import { React, ReactNative, FluxDispatcher, constants } from "@vendetta/metro/common";
 import { findInReactTree } from "@vendetta/utils";
 import { getAssetIDByName } from "@vendetta/ui/assets";
@@ -296,6 +296,7 @@ export function startHiddenChannels() {
         return () => {};
     }
     storage.hiddenChannelsShowIcon ??= true;
+    storage.hiddenChannelsShowPopup ??= true;
 
     const isHidden = channelOrId => {
         let channel = channelOrId;
@@ -315,6 +316,33 @@ export function startHiddenChannels() {
         return result;
     }));
 
+    const transition = safeFind(findByProps, "transitionToGuild");
+    if (transition) {
+        for (const key of Object.keys(transition)) {
+            if (typeof transition[key] !== "function") continue;
+            cleanups.push(instead(key, transition, (args, original) => {
+                const route = args?.[0];
+                const match = typeof route === "string" ? route.match(/(\\d+)$/) : null;
+                const channel = match ? channelStore?.getChannel?.(match[1]) : null;
+                if (!channel || !isHidden(channel)) return original(...args);
+                const confirm = (globalThis as any).vendetta?.ui?.alerts?.showConfirmationAlert;
+                if (!storage.hiddenChannelsShowPopup || typeof confirm !== "function") return original(...args);
+                confirm({
+                    title: "This channel is hidden.",
+                    content: React.createElement(ReactNative.View, { style: { gap: 6 } },
+                        React.createElement(ReactNative.Text, { style: { fontWeight: "700" } }, channel.name || "Hidden channel"),
+                        React.createElement(ReactNative.Text, null, channel.topic || "The client can only show information already cached locally; it cannot grant server permissions or fetch messages it has not received.")
+                    ),
+                    confirmText: "View Anyway",
+                    cancelText: "Cancel",
+                    onConfirm: () => original(...args)
+                });
+                return {};
+            }));
+        }
+    } else {
+        console.warn("[KiraUtils/HiddenChannels] transitionToGuild is unavailable on this client.");
+    }
     {
         const ChannelInfo = safeFind(findByName, "ChannelInfo", false);
         if (ChannelInfo) cleanups.push(after("default", ChannelInfo, ([props], rendered) => {
