@@ -333,6 +333,13 @@ export function startHiddenChannels() {
 
 export function startLocalEdit() {
     const runtime = globalThis as any;
+    storage.localEditClearOnRestart ??= false;
+    const sessionId = runtime.__kiraUtilsLocalEditSession ??=
+        `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    if (storage.localEditClearOnRestart && storage.localEditSessionId && storage.localEditSessionId !== sessionId) {
+        storage.localEdits = {};
+    }
+    storage.localEditSessionId = sessionId;
     if (runtime.__lesbunnyLocalEditPlugins?.remastered) {
         storage.toggle.localEdit = false;
         showToast("Standalone Local Edit is already enabled. Disable it to use KiraUtils Local Edit.");
