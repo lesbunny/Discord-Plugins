@@ -1,9 +1,10 @@
 import React from "react";
 import { findByProps, findByStoreName } from "@vendetta/metro";
 import { FluxDispatcher, ReactNative } from "@vendetta/metro/common";
-import { after, before } from "@vendetta/patcher";
+import { after, before, instead } from "@vendetta/patcher";
 import { storage } from "@vendetta/plugin";
 import { getAssetIDByName } from "@vendetta/ui/assets";
+import { Forms } from "@vendetta/ui/components";
 import { findInReactTree } from "@vendetta/utils";
 
 type LocalEdit = {
@@ -57,6 +58,7 @@ const ActionSheetRowModule =
 const ActionSheetRow =
     ActionSheetRowModule?.ActionSheetRow ??
     ActionSheetRowModule?.DefaultActionSheetRow ??
+    Forms?.FormRow ??
     null;
 
 const { View, Text, Pressable, ScrollView } = ReactNative ?? {};
@@ -123,28 +125,21 @@ function clearLocalEdit(messageId: string): void {
 
 function getActionRows(tree: any): any[] | null {
     if (typeof findInReactTree !== "function") return null;
-
     const isRow = (node: any): boolean => {
-        const label = node?.props?.label;
-        if (typeof label !== "string" || typeof node?.props?.onPress !== "function") return false;
-
+        const props = node?.props;
+        if (!props) return false;
+        const label = props.label ?? props.message ?? props.title ?? props.accessibilityLabel;
+        const hasHandler = typeof props.onPress === "function" ||
+            typeof props.onPressRow === "function" || typeof props.onClick === "function";
+        if (typeof label !== "string" || !hasHandler) return false;
         const type = node?.type;
-        return (
-            type === ActionSheetRow ||
-            type?.name === "ActionSheetRow" ||
+        return type === ActionSheetRow || type?.name === "ActionSheetRow" ||
             type?.displayName === "ActionSheetRow" ||
-            /^(reply|copy|copy text|copy message link|mark unread|delete)$/i.test(label)
-        );
+            /^(reply|copy|copy text|copy message link|mark unread|delete|pin message|add reaction)$/i.test(label);
     };
-
     try {
-        return findInReactTree(
-            tree,
-            (node: any) => Array.isArray(node) && node.some(isRow)
-        ) ?? null;
-    } catch {
-        return null;
-    }
+        return findInReactTree(tree, (node: any) => Array.isArray(node) && node.some(isRow)) ?? null;
+    } catch { return null; }
 }
 
 function beginLocalEdit(message: any): void {
@@ -184,70 +179,54 @@ function patchActionSheet(): void {
         console.warn("[localedit] Message action sheet modules were not found; the context-menu button is unavailable.");
         return;
     }
-
     patches.push(before("openLazy", LazyActionSheet, ([component, key, props]: any[]) => {
-        const acceptedKeys = new Set([
-            "MessageLongPressActionSheet",
-            "MessageLongPressActionSheetV2",
-            "MessageActionSheet",
-        ]);
-        if (!acceptedKeys.has(String(key))) return;
-
-        const message = props?.message ?? props?.target?.message ?? props;
+        const keyText = String(key ?? "").toLowerCase();
+        if (!keyText.includes("message") || !keyText.includes("actionsheet")) return;
+        const message = props?.message ?? props?.target?.message ?? props?.actionMessage?.message ??
+            props?.messageProps?.message ?? props;
         if (!message?.id || !(message?.channel_id ?? message?.channelId)) return;
         if (!component || typeof component.then !== "function") return;
-
         component.then((instance: any) => {
             if (!instance || typeof instance.default !== "function") return;
-
             let unpatch: (() => void) | undefined;
             unpatch = after("default", instance, (_args: any[], rendered: any) => {
-                if (unpatch) {
-                    // The menu is rendered on demand; remove this temporary render patch immediately.
-                    setTimeout(unpatch, 0);
-                    unpatch = undefined;
-                }
-
+                if (unpatch) { setTimeout(unpatch, 0); unpatch = undefined; }
                 try {
                     const rows = getActionRows(rendered);
-                    if (!rows || rows.some((row: any) => row?.props?.label === "Edit Locally")) {
-                        return rendered;
-                    }
-
+                    if (!rows || rows.some((row: any) => {
+                        const label = row?.props?.label ?? row?.props?.message;
+                        return String(label ?? "").toLowerCase() === "edit locally";
+                    })) return rendered;
                     const currentUser = UserStore?.getCurrentUser?.();
-                    const currentMessage =
-                        MessageStore?.getMessage?.(message.channel_id ?? message.channelId, message.id) ??
-                        message;
-
-                    // The feature is intended for messages authored by other people.
+                    const currentMessage = MessageStore?.getMessage?.(
+                        message.channel_id ?? message.channelId, message.id
+                    ) ?? message;
                     if (!currentUser || currentMessage?.author?.id === currentUser.id) return rendered;
-
-                    const replyIndex = rows.findIndex((row: any) =>
-                        /reply/i.test(String(row?.props?.label ?? ""))
-                    );
+                    const replyIndex = rows.findIndex((row: any) => {
+                        const label = row?.props?.label ?? row?.props?.message;
+                        return /reply/i.test(String(label ?? ""));
+                    });
                     const position = replyIndex >= 0 ? replyIndex + 1 : 0;
                     const assetId = safeFind(getAssetIDByName, "ic_edit_24px");
                     const Icon = ActionSheetRow?.Icon;
-                    const iconNode = Icon && assetId
-                        ? React.createElement(Icon, { source: assetId })
-                        : assetId;
-
+                    const iconNode = Icon && assetId ? React.createElement(Icon, { source: assetId }) : undefined;
+                    const onEdit = () => beginLocalEdit(currentMessage);
                     rows.splice(position, 0, React.createElement(ActionSheetRow, {
                         key: "localedit-" + String(currentMessage.id),
                         label: "Edit Locally",
+                        message: "Edit Locally",
                         icon: iconNode,
-                        onPress: () => beginLocalEdit(currentMessage),
+                        leading: iconNode,
+                        iconSource: assetId,
+                        onPress: onEdit,
+                        onPressRow: onEdit,
                     }));
                 } catch (error) {
                     console.error("[localedit] Could not add the context-menu action.", error);
                 }
-
                 return rendered;
             });
-
-        }).catch((error: any) => {
-            console.warn("[localedit] Could not load the message action sheet.", error);
-        });
+        }).catch((error: any) => console.warn("[localedit] Could not load the message action sheet.", error));
     }));
 }
 
@@ -290,83 +269,57 @@ function patchMessageStore(): void {
 }
 
 function patchMessageEditor(): void {
-    if (!Messages || typeof Messages.editMessage !== "function" || typeof before !== "function") {
+    if (!Messages || typeof Messages.editMessage !== "function" || typeof instead !== "function") {
         console.warn("[localedit] The message-edit function was not found; local edits cannot be intercepted safely.");
         return;
     }
-
-    patches.push(before("editMessage", Messages, (args: any[]) => {
-        if (!activeEdit) return;
-
-        const arg0 = args?.[0];
-        const arg1 = args?.[1];
-        const arg2 = args?.[2];
-
+    patches.push(instead("editMessage", Messages, (args: any[], original: (...args: any[]) => any) => {
+        if (!activeEdit) return original(...args);
+        const active = activeEdit;
+        const arg0 = args?.[0], arg1 = args?.[1], arg2 = args?.[2];
         const messageIdValue =
             (typeof arg1 === "string" || typeof arg1 === "number" ? arg1 : undefined) ??
-            arg0?.messageId ??
-            arg0?.message_id ??
-            arg0?.id ??
-            arg2?.id;
+            arg0?.messageId ?? arg0?.message_id ?? arg0?.id ?? arg2?.id;
         const messageId = messageIdValue == null ? "" : String(messageIdValue);
-
-        // Do not intercept unrelated edits, such as a real edit to one of the user's own messages.
-        if (!messageId || messageId !== activeEdit.messageId) return;
-
-        const content =
-            typeof arg2 === "string"
-                ? arg2
-                : typeof arg2?.content === "string"
-                    ? arg2.content
-                    : typeof arg0?.content === "string"
-                        ? arg0.content
-                        : undefined;
-
+        if (!messageId || messageId !== active.messageId) return original(...args);
+        const content = typeof arg2 === "string" ? arg2 :
+            typeof arg2?.content === "string" ? arg2.content :
+            typeof arg0?.content === "string" ? arg0.content : undefined;
         if (typeof content !== "string") {
+            console.warn("[localedit] Edit request content shape was not recognized.");
             activeEdit = null;
             originalSnapshots.delete(messageId);
-            return;
+            return original(...args);
         }
-
+        const currentMessage = MessageStore?.getMessage?.(active.channelId, messageId);
         const snapshot = originalSnapshots.get(messageId);
         const previous = getLocalEdit(messageId);
-        const originalContent =
-            previous?.originalContent ??
-            snapshot?.originalContent ??
-            String(MessageStore?.getMessage?.(activeEdit.channelId, messageId)?.content ?? "");
-
-        localEdits()[messageId] = {
-            channelId: activeEdit.channelId,
-            content,
-            originalContent,
-        };
-
+        const originalContent = previous?.originalContent ?? snapshot?.originalContent ??
+            String(currentMessage?.content ?? "");
+        localEdits()[messageId] = { channelId: active.channelId, content, originalContent };
         try {
-            const currentMessage = MessageStore?.getMessage?.(activeEdit.channelId, messageId);
             FluxDispatcher?.dispatch?.({
                 type: "MESSAGE_UPDATE",
                 message: {
                     ...(currentMessage ?? {}),
                     id: messageId,
-                    channel_id: activeEdit.channelId,
+                    channel_id: active.channelId,
                     content,
                     edited_timestamp: null,
+                    editedTimestamp: null,
                 },
+                otherPluginBypass: true,
+                log_edit: false,
             });
         } catch (error) {
-            console.warn("[localedit] The saved edit could not be pushed into the live message store.", error);
+            console.warn("[localedit] Saved the local edit but could not refresh the live message store.", error);
         }
-
-        // Returning false from a Vendetta before-patch cancels the original edit request.
         activeEdit = null;
         originalSnapshots.delete(messageId);
-        return false;
+        return undefined;
     }));
-
     if (typeof Messages.endEditMessage === "function" && typeof after === "function") {
-        patches.push(after("endEditMessage", Messages, () => {
-            activeEdit = null;
-        }));
+        patches.push(after("endEditMessage", Messages, () => { activeEdit = null; }));
     }
 }
 
