@@ -97,7 +97,7 @@ function ModulePage({ item }) {
             if (/^[0-9]{17,20}$/.test(id) && !idList.includes(id)) storage.silentChannelIds = [...idList, id];
             setSilentId(""); refresh();
         }} />);
-        ...idList.map(id => <FormRow key={id} label={id} subLabel="Tap to remove" onPress={() => { storage.silentChannelIds = idList.filter(value => value !== id); refresh(); }} />)
+        optionRows.push(...idList.map(id => <FormRow key={id} label={id} subLabel="Tap to remove" onPress={() => { storage.silentChannelIds = idList.filter(value => value !== id); refresh(); }} />));
     }
     if (item.id === "catbox") {
         optionRows.push(row("Always upload to Catbox", storage.catboxAlwaysUpload, value => { storage.catboxAlwaysUpload = value; }));
