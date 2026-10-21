@@ -214,7 +214,7 @@ const unLoadDatas = () => {
 export default {
     onLoad: () => {
         storage.localEditClearOnRestart ??= false;
-        const localEditSession = (globalThis as any).__kiraUtilsLocalEditSession ??=
+        const localEditSession = globalThis.__kiraUtilsLocalEditSession ??=
             `${Date.now()}-${Math.random().toString(36).slice(2)}`;
         if (storage.localEditClearOnRestart && storage.localEditSessionId && storage.localEditSessionId !== localEditSession) {
             storage.localEdits = {};
