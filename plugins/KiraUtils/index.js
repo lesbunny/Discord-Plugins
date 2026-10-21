@@ -164,12 +164,20 @@ function startMiniMod() {
 export function setFeature(feature, enabled) {
     if (Object.prototype.hasOwnProperty.call(integrationFactories, feature)) {
         storage.toggle[feature] = !!enabled;
-        if (enabled && !integrationUnpatches[feature]) {
-            try { integrationUnpatches[feature] = integrationFactories[feature](); }
-            catch (error) { console.error("[KiraUtils] Feature failed to start: " + feature, error); }
-        } else if (!enabled && integrationUnpatches[feature]) {
-            try { integrationUnpatches[feature](); } catch (error) { console.warn("[KiraUtils] Feature cleanup failed: " + feature, error); }
+        if (integrationUnpatches[feature]) {
+            try { integrationUnpatches[feature](); }
+            catch (error) { console.warn("[KiraUtils] Feature cleanup failed: " + feature, error); }
             delete integrationUnpatches[feature];
+        }
+        if (enabled) {
+            try {
+                const cleanup = integrationFactories[feature]();
+                if (storage.toggle[feature] && typeof cleanup === "function") integrationUnpatches[feature] = cleanup;
+                else if (typeof cleanup === "function") cleanup();
+            } catch (error) {
+                storage.toggle[feature] = false;
+                console.error("[KiraUtils] Feature failed to start: " + feature, error);
+            }
         }
         return;
     }
