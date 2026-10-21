@@ -315,10 +315,10 @@ export function startHiddenChannels() {
         return result;
     }));
 
-    if (storage.hiddenChannelsShowIcon) {
+    {
         const ChannelInfo = safeFind(findByName, "ChannelInfo", false);
         if (ChannelInfo) cleanups.push(after("default", ChannelInfo, ([props], rendered) => {
-            if (!props?.channel || !isHidden(props.channel)) return rendered;
+            if (!storage.hiddenChannelsShowIcon || !props?.channel || !isHidden(props.channel)) return rendered;
             return React.createElement(React.Fragment, null,
                 React.createElement(ReactNative.Image, {
                     source: getAssetIDByName("ic_lock"),
