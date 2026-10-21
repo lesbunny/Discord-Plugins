@@ -134,6 +134,7 @@ export default function KiraUtilsSettings() {
             )}
             {item.id === "hiddenChannels" && storage.toggle.hiddenChannels && (
                 <FormSwitchRow label="Show lock icon on hidden channels" value={storage.hiddenChannelsShowIcon !== false} onValueChange={v => { storage.hiddenChannelsShowIcon = v; }} />
+                    <FormSwitchRow label="Confirm before opening hidden channels" value={storage.hiddenChannelsShowPopup !== false} onValueChange={v => { storage.hiddenChannelsShowPopup = v; }} />
             )}
             {item.id === "localEdit" && storage.toggle.localEdit && (
                 <View style={{ marginHorizontal: 12, marginBottom: 8 }}>
