@@ -12,6 +12,8 @@ import { getUser } from "./patches/getUser";
 import { stopPlugin } from "@vendetta/plugins";
 import sendMessage from "./patches/sendMessage";
 import { FluxDispatcher } from "@vendetta/metro/common";
+import { findByStoreName } from "@vendetta/metro";
+import { before } from "@vendetta/patcher";
 import { start as startStaffTags, stop as stopStaffTags } from "./staffTags/index.ts";
 import tenorGifFix from "./nexx/tenorGifFix.ts";
 
@@ -30,7 +32,8 @@ makeDefaults(storage, {
 		customRoleIcon: false,
 		customClan: false,
         staffTags: false,
-        tenorGifFix: false,		
+        tenorGifFix: false,
+        minimod: false,		
 	},
 	utils: {
 		cactus: {
@@ -81,6 +84,7 @@ makeDefaults(storage, {
 let activeUnpatches = [];
 let noTypeUnpatches = [];
 let tenorUnpatch = null;
+let minimodUnpatch = null;
 let staffTagsActive = false;
 
 export let isEnabled = false;
@@ -110,6 +114,32 @@ const clean = (cleanups) => {
     }
 };
 
+function startMiniMod() {
+    const GuildMemberStore = findByStoreName("GuildMemberStore");
+    const nativeProxy = (globalThis as any).window?.nativeModuleProxy ?? (globalThis as any).nativeModuleProxy;
+    const chatModule = nativeProxy?.NativeChatModule ?? nativeProxy?.DCDChatManager;
+    if (!chatModule || typeof chatModule.updateRows !== "function") {
+        console.warn("[KiraUtils/MiniMod] Native chat row module was not found on this client.");
+        return () => {};
+    }
+    return before("updateRows", chatModule, (args: any[]) => {
+        try {
+            const rows = JSON.parse(args[1]);
+            if (!Array.isArray(rows) || !rows.some((row: any) => row && "message" in row)) return;
+            const timedOut = GuildMemberStore?.getCommunicationDisabledUserMap?.() ?? {};
+            const now = Date.now();
+            for (const row of rows) {
+                if (row?.type !== 1 || !row?.message) continue;
+                const expiresAt = new Date(timedOut[`${row.message.guildId}-${row.message.authorId}`]).getTime();
+                if (Number.isFinite(expiresAt) && expiresAt > now) row.message.communicationDisabled = true;
+            }
+            args[1] = JSON.stringify(rows);
+        } catch (error) {
+            console.warn("[KiraUtils/MiniMod] Could not annotate timeout status.", error);
+        }
+    });
+}
+
 export function setFeature(feature, enabled) {
     if (feature === "notype") {
         if (enabled && !noTypeUnpatches.length) noTypeUnpatches = runFactories([startTyping, stopTyping]);
@@ -122,6 +152,10 @@ export function setFeature(feature, enabled) {
     if (feature === "tenorGifFix") {
         if (enabled && !tenorUnpatch) tenorUnpatch = tenorGifFix();
         else if (!enabled && tenorUnpatch) { try { tenorUnpatch(); } catch {} tenorUnpatch = null; }
+    }
+    if (feature === "minimod") {
+        if (enabled && !minimodUnpatch) minimodUnpatch = startMiniMod();
+        else if (!enabled && minimodUnpatch) { try { minimodUnpatch(); } catch {} minimodUnpatch = null; }
     }
 }
 
@@ -144,6 +178,7 @@ export default {
         setFeature("notype", !!storage?.toggle?.notype);
         setFeature("staffTags", !!storage?.toggle?.staffTags);
         setFeature("tenorGifFix", !!storage?.toggle?.tenorGifFix);
+        setFeature("minimod", !!storage?.toggle?.minimod);
         globalThis.__kiraUtilsController = { setFeature };
     },
     onUnload: () => {
@@ -152,6 +187,7 @@ export default {
         setFeature("notype", false);
         setFeature("staffTags", false);
         setFeature("tenorGifFix", false);
+        setFeature("minimod", false);
         clean(activeUnpatches);
         unLoadDatas?.();
     },
