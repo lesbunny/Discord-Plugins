@@ -1,12 +1,12 @@
 # シグマ siguma's revenge/bunny/kettu plugins.
-A few vendetta plugins have been forked and are being maintained to work with it's successors [Revenge](https://github.com/revenge-mod/revenge-bundle),[Kettu](https://github.com/C0C0B01/Kettu)). Credit goes to the plugin devs for their respective work.
+A few vendetta plugins have been forked and are being maintained to work with its successors [Revenge](https://github.com/revenge-mod/revenge-bundle) and [Kettu](https://github.com/C0C0B01/Kettu). Credit goes to the plugin devs for their respective work.
 
 # How to install?
-Copy and paste the plugin URL into your discord clients Plugins page.
+Copy and paste the plugin URL into your Discord client's Plugins page.
 
-# Plugins 
-## HideBlockedAndIgnoredMessages 
-A plugin that removes the `X blocked or ignored message/s` prompt and replies to the blocked or ignored messages from chat (optional in plugin settings).
+# Plugins
+## HideBlockedAndIgnoredMessages
+A plugin that removes the \`X blocked or ignored message/s\` prompt and replies to the blocked or ignored messages from chat (optional in plugin settings).
 
 > https://shipwr3ckd.github.io/revengeplugin/HideBlockedAndIgnoredMessages/
 <h3>
@@ -17,7 +17,7 @@ A plugin that removes the `X blocked or ignored message/s` prompt and replies to
 </details>
 </h3>
 
-## CopyBios 
+## CopyBios
 Copy bio text.
 
 > https://shipwr3ckd.github.io/revengeplugin/CopyBios/
@@ -43,7 +43,7 @@ Upload your silly ahh files larger than 10MBs to catbox.moe.
 </details>
 </h3>
 
-## Silent Messages 
+## Silent Messages
 Send messages without notifying the receiver.
 
 > https://shipwr3ckd.github.io/revengeplugin/silentmessages/
@@ -65,90 +65,40 @@ Sets Discord Rich Presence for your profile.
 Blur image previews and disable embed media in NSFW channels.
 
 > https://shipwr3ckd.github.io/revengeplugin/nsfw-blur
-<h3>
-<details>
-  <summary>Preview</summary>
-  <p>
-    <img src="./images/nsfw-blur.png/" width="300" />
-  </p>
-</details>
-</h3>
 
-## Local Edit
-Edit messages locally.
+## Local Edit Remastered
+Edit other people's messages locally on your device. Edits are persisted locally and are never sent to Discord.
 
-> https://shipwr3ckd.github.io/revengeplugin/localedit
-<h3>
+> https://lesbunny.github.io/revengeplugin/localedit/
+
 <details>
   <summary>Preview</summary>
   <p>
     <img src="./images/localedit.gif/" width="300" />
   </p>
 </details>
-</h3>
 
 ## AnonymousFileNames
 Randomises file names before you upload them.
 
 > https://shipwr3ckd.github.io/revengeplugin/AnonymousFileNames
-<h3>
-<details>
-  <summary>Preview</summary>
-  <p>
-    <img src="./images/AnonymousFileNames.png/" width="300" />
-  </p>
-</details>
-</h3>
 
 ## AudioBookShelfRichPresence
 Rich presence for AudioBookShelf media server.
 
 > https://shipwr3ckd.github.io/revengeplugin/ABSRPC
-<h3>
-<details>
-  <summary>Preview</summary>
-  <p>
-    <img src="./images/ABSRPC.png/" width="300" />
-  </p>
-</details>
-</h3>
 
 ## Custom Voice Messages
-Allows Sending any audio as a voice message.
+Allows sending any audio as a voice message.
 
 > https://shipwr3ckd.github.io/revengeplugin/customVoiceMessages
-<h3>
-<details>
-  <summary>Preview</summary>
-  <p>
-    <img src="./images/customVoiceMessages.png/" width="300" />
-  </p>
-</details>
-</h3>
 
 ## Staff Tags
 Shows extra tags for staff members.
 
 > https://shipwr3ckd.github.io/revengeplugin/staff-tags
-<h3>
-<details>
-  <summary>Preview</summary>
-  <p>
-    <img src="./images/staff-tags.png/" width="300" />
-  </p>
-</details>
-</h3>
 
 ## FakeProfileThemesAndEffects
 Allows profile theming and the usage of profile effects by hiding the colors and effect ID in your About Me using invisible, zero-width characters.
 
 > https://shipwr3ckd.github.io/FPTE/FakeProfileThemesAndEffects
-
-<h3>
-<details>
-  <summary>Preview</summary>
-  <p>
-    <img src="./images/FPTE.png/" width="300" />
-  </p>
-</details>
-</h3>
