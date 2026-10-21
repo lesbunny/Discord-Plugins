@@ -111,7 +111,7 @@ export default function KiraUtilsSettings() {
                         if (/^\d{17,20}$/.test(id) && !(storage.silentChannelIds ?? []).includes(id)) storage.silentChannelIds = [...(storage.silentChannelIds ?? []), id];
                         setSilentIdInput("");
                     }} />
-                    {(storage.silentChannelIds ?? []).map((id: string) => (
+                    {(storage.silentChannelIds ?? []).map((id) => (
                         <FormRow key={id} label={id} subLabel="Tap to remove from the silent list" onPress={() => { storage.silentChannelIds = storage.silentChannelIds.filter(x => x !== id); }} />
                     ))}
                 </View>
@@ -126,7 +126,7 @@ export default function KiraUtilsSettings() {
             )}
             {item.id === "anonymousFileNames" && storage.toggle.anonymousFileNames && (
                 <View style={{ marginHorizontal: 12, marginBottom: 8 }}>
-                    <FormInput title="Random filename length" keyboardType="numeric" value={filenameLength} onChange={(v: string) => { const next = v.replace(/[^0-9]/g, "").slice(0, 2); setFilenameLength(next); storage.anonymousFilenameLength = next || "8"; }} />
+                    <FormInput title="Random filename length" keyboardType="numeric" value={filenameLength} onChange={(v) => { const next = v.replace(/[^0-9]/g, "").slice(0, 2); setFilenameLength(next); storage.anonymousFilenameLength = next || "8"; }} />
                 </View>
             )}
             {item.id === "staffTags" && storage.toggle.staffTags && (
