@@ -156,9 +156,11 @@ export function startSilentMessages() {
             let ids = [id];
             try {
                 const channel = channels?.getChannel?.(id);
-                if (Array.isArray(channel?.recipients)) ids = [...new Set([...channel.recipients, id])];
+                if (Array.isArray(channel?.recipients)) ids.push(...channel.recipients);
             } catch {}
-            if (storage.silentAlways || ids.some(x => (storage.silentChannelIds || []).includes(String(x)))) {
+            if (Array.isArray(message.mentions)) ids.push(...message.mentions.map(mention => mention?.id).filter(Boolean));
+            const targets = [...new Set(ids.map(value => String(value)))];
+            if (storage.silentAlways || targets.some(target => (storage.silentChannelIds || []).includes(target))) {
                 message.content = "@silent " + message.content;
             }
         }));
@@ -220,18 +222,22 @@ function ensureSharedUploadPatch(): void {
             const sender = safeFind(findByProps, "sendMessage");
             const channelId = String(this?.channelId ?? safeFind(findByProps, "getChannelId")?.getChannelId?.() ?? "");
 
+            let delivered = false;
             if (storage.catboxInsert) {
                 pendingCatboxLink = markdown;
                 showToast("Catbox link will be inserted into your next message.");
-            } else if (storage.catboxCopy && ReactNative?.Clipboard?.setString) {
+                delivered = true;
+            }
+            if (storage.catboxCopy && ReactNative?.Clipboard?.setString) {
                 ReactNative.Clipboard.setString(markdown);
                 showToast("Catbox link copied.");
-            } else if (channelId && typeof sender?.sendMessage === "function") {
+                delivered = true;
+            } else if (!storage.catboxInsert && channelId && typeof sender?.sendMessage === "function") {
                 await sender.sendMessage(channelId, { content: markdown });
                 showToast("Catbox link sent to chat.");
-            } else {
-                showToast("Catbox upload complete: " + url);
+                delivered = true;
             }
+            if (!delivered) showToast("Catbox upload complete: " + url);
             return null;
         } catch (error: any) {
             console.error("[KiraUtils/Catbox]", error);
