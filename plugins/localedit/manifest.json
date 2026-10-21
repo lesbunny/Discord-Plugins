@@ -1,8 +1,15 @@
 {
   "name": "Local Edit Remastered",
-  "description": "Locally edit any message, including your own. Changes are not sent to Discord and can be cleared in plugin settings.",
-  "authors": [{ "name": "Kira", "id": "737597276339437578" }],
+  "description": "Locally edit any message, including your own. Changes are never sent to Discord and are kept locally by default.",
+  "authors": [
+    {
+      "name": "Kira",
+      "id": "925904715525554206"
+    }
+  ],
   "main": "src/index.tsx",
-  "version": "1.2.3",
-  "vendetta": { "icon": "ic_edit_24px" }
+  "version": "1.3.0",
+  "vendetta": {
+    "icon": "ic_edit_24px"
+  }
 }
