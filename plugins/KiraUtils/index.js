@@ -16,6 +16,10 @@ import { findByStoreName } from "@vendetta/metro";
 import { before } from "@vendetta/patcher";
 import { start as startStaffTags, stop as stopStaffTags } from "./staffTags/index.ts";
 import tenorGifFix from "./nexx/tenorGifFix.ts";
+import {
+    startHideBlocked, startCopyBios, startCatbox, startSilentMessages,
+    startAnonymousFileNames, startHiddenChannels, startLocalEdit,
+} from "./integrations.js";
 
 makeDefaults(storage, {
 	toggle: {
@@ -33,7 +37,14 @@ makeDefaults(storage, {
 		customClan: false,
         staffTags: false,
         tenorGifFix: false,
-        minimod: false,		
+        minimod: false,
+        hideBlocked: false,
+        copyBios: false,
+        catbox: false,
+        silentMessages: false,
+        anonymousFileNames: false,
+        hiddenChannels: false,
+        localEdit: false,		
 	},
 	utils: {
 		cactus: {
@@ -86,6 +97,16 @@ let noTypeUnpatches = [];
 let tenorUnpatch = null;
 let minimodUnpatch = null;
 let staffTagsActive = false;
+const integrationUnpatches = Object.create(null);
+const integrationFactories = {
+    hideBlocked: startHideBlocked,
+    copyBios: startCopyBios,
+    catbox: startCatbox,
+    silentMessages: startSilentMessages,
+    anonymousFileNames: startAnonymousFileNames,
+    hiddenChannels: startHiddenChannels,
+    localEdit: startLocalEdit,
+};
 
 export let isEnabled = false;
 
@@ -141,6 +162,17 @@ function startMiniMod() {
 }
 
 export function setFeature(feature, enabled) {
+    if (Object.prototype.hasOwnProperty.call(integrationFactories, feature)) {
+        storage.toggle[feature] = !!enabled;
+        if (enabled && !integrationUnpatches[feature]) {
+            try { integrationUnpatches[feature] = integrationFactories[feature](); }
+            catch (error) { console.error("[KiraUtils] Feature failed to start: " + feature, error); }
+        } else if (!enabled && integrationUnpatches[feature]) {
+            try { integrationUnpatches[feature](); } catch (error) { console.warn("[KiraUtils] Feature cleanup failed: " + feature, error); }
+            delete integrationUnpatches[feature];
+        }
+        return;
+    }
     if (feature === "notype") {
         if (enabled && !noTypeUnpatches.length) noTypeUnpatches = runFactories([startTyping, stopTyping]);
         else if (!enabled) clean(noTypeUnpatches);
@@ -160,7 +192,7 @@ export function setFeature(feature, enabled) {
 }
 
 const unLoadDatas = () => {
-	storage.utils.eml.editedMsg.forEach(savedMsg => {
+	(storage?.utils?.eml?.editedMsg ?? []).forEach(savedMsg => {
 		FluxDispatcher.dispatch({
 			type: "MESSAGE_UPDATE",
 			message: savedMsg,
@@ -168,7 +200,7 @@ const unLoadDatas = () => {
 		})
 	})
 
-	storage.utils.eml.editedMsg = [];
+	if (storage?.utils?.eml) storage.utils.eml.editedMsg = [];
 }
 
 export default {
@@ -179,6 +211,7 @@ export default {
         setFeature("staffTags", !!storage?.toggle?.staffTags);
         setFeature("tenorGifFix", !!storage?.toggle?.tenorGifFix);
         setFeature("minimod", !!storage?.toggle?.minimod);
+        for (const feature of Object.keys(integrationFactories)) setFeature(feature, !!storage?.toggle?.[feature]);
         globalThis.__kiraUtilsController = { setFeature };
     },
     onUnload: () => {
@@ -188,6 +221,7 @@ export default {
         setFeature("staffTags", false);
         setFeature("tenorGifFix", false);
         setFeature("minimod", false);
+        for (const feature of Object.keys(integrationFactories)) setFeature(feature, false);
         clean(activeUnpatches);
         unLoadDatas?.();
     },
