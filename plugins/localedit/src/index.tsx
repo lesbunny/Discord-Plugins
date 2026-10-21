@@ -87,7 +87,8 @@ function processList(list: any[]): any[] {
 function messageInterceptor(action: any): boolean {
     if (!enabled || !action?.type || action.__localEditRemastered) return false;
     if (pendingNativeEdit && ["CLEAR_EDITING_MESSAGE", "CANCEL_EDITING_MESSAGE", "END_EDITING_MESSAGE"].includes(action.type)) {
-        cancelNativeEditing();
+        const expectedEdit = pendingNativeEdit;
+        setTimeout(() => { if (pendingNativeEdit === expectedEdit) cancelNativeEditing(); }, 50);
     }
     try {
         const message = action.message;
