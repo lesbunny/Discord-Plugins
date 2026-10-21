@@ -15,7 +15,7 @@ Install page: https://lesbunny.github.io/revengeplugin/localedit/
 Source: https://github.com/lesbunny/Discord-Plugins/tree/master/plugins/localedit
 
 ### KiraUtils
-A bundled utility collection based on AzzyUtils, with repaired patch cleanup and live toggles for Staff Tags and the NexxUtils-inspired Tenor GIF Fix.
+A grouped all-in-one toolbox based on AzzyUtils with Hide Blocked/ignored messages, Copy Bios, Catbox uploads, Silent Messages, Anonymous File Names, Hidden Channels, Local Edit, Staff Tags, Tenor GIF Fix and MiniMod.
 
 Install page: https://lesbunny.github.io/revengeplugin/kirautils/  
 Source: https://github.com/lesbunny/Discord-Plugins/tree/master/plugins/KiraUtils
