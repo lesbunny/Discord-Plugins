@@ -299,6 +299,49 @@ function realViewPermission(channel) {
     return allowed;
 }
 
+
+export function startFastCopyUserID() {
+    const cleanups = [];
+    const menu = safeFind(findByProps, "openLazy", "hideActionSheet");
+    const rowModule = safeFind(findByProps, "ActionSheetRow");
+    const ActionSheetRow = rowModule?.ActionSheetRow;
+    if (!menu || !ActionSheetRow) return () => {};
+    cleanups.push(before("openLazy", menu, ([component, key, props]) => {
+        if (typeof key !== "string" || !key.includes("MessageLongPress")) return;
+        const message = props?.message ?? props?.props?.message;
+        const userId = String(message?.author?.id ?? message?.authorId ?? "");
+        if (!/^[0-9]{17,20}$/.test(userId)) return;
+        Promise.resolve(component).then(instance => {
+            if (!instance) return;
+            const target = typeof instance.default === "function" ? instance : typeof instance.default?.type === "function" ? instance.default : null;
+            if (!target) return;
+            const property = target === instance ? "default" : "type";
+            let unpatch;
+            unpatch = after(property, target, (_args, rendered) => {
+                const groups = findInReactTree(rendered, node => Array.isArray(node) && node[0]?.type?.name === "ActionSheetRowGroup");
+                if (!groups?.length) return rendered;
+                const button = React.createElement(ActionSheetRow, {
+                    key: "kira-copy-user-id",
+                    label: "Copy User ID",
+                    icon: React.createElement(ActionSheetRow.Icon, { source: getAssetIDByName("ic_copy_id") ?? getAssetIDByName("ic_message_copy") }),
+                    onPress: () => {
+                        try { ReactNative.Clipboard?.setString?.(userId); showToast("Copied user ID: " + userId); }
+                        catch (error) { console.error("[KiraUtils/FastCopyUserID]", error); showToast("Could not copy this ID."); }
+                        try { menu.hideActionSheet?.(); } catch {}
+                    }
+                });
+                const rows = findInReactTree(groups[0], node => Array.isArray(node) && node.some(row => row?.type?.name === "ActionSheetRow"));
+                if (rows) {
+                    if (!rows.some(row => row?.key === "kira-copy-user-id")) rows.unshift(button);
+                } else groups.unshift(React.createElement(ActionSheetRow.Group, { key: "kira-copy-user-id-group" }, button));
+                return rendered;
+            });
+            cleanups.push(() => unpatch?.());
+        }).catch(error => console.warn("[KiraUtils/FastCopyUserID] Action sheet patch failed.", error));
+    }));
+    return () => cleanupAll(cleanups);
+}
+
 export function startColorfulChannels() {
     const cleanups = [];
     storage.colorfulChannelsNsfwTag ??= true;
