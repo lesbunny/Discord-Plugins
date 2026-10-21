@@ -382,7 +382,10 @@ export function startLocalEdit() {
     cleanups.push(before("dispatch", dispatcher, args => {
         const event = args?.[0];
         if (!event || event.__kiraLocalEdit) return;
-        if (pending && ["CLEAR_EDITING_MESSAGE", "CANCEL_EDITING_MESSAGE", "END_EDITING_MESSAGE"].includes(event.type)) clearPending();
+        if (pending && ["CLEAR_EDITING_MESSAGE", "CANCEL_EDITING_MESSAGE", "END_EDITING_MESSAGE"].includes(event.type)) {
+            const expectedEdit = pending;
+            setTimeout(() => { if (pending === expectedEdit) clearPending(); }, 50);
+        }
         if ((event.type === "MESSAGE_UPDATE" || event.type === "MESSAGE_CREATE") && event.message) {
             const changed = apply(event.message);
             if (changed !== event.message) event.message = changed;
