@@ -151,6 +151,8 @@ const clean = (cleanups) => {
 
 function startMiniMod() {
     const GuildMemberStore = findByStoreName("GuildMemberStore");
+    storage.minimodShowTimeouts ??= true;
+    if (!storage.minimodShowTimeouts) return () => {};
     const nativeProxy = globalThis.window?.nativeModuleProxy ?? globalThis.nativeModuleProxy;
     const chatModule = nativeProxy?.NativeChatModule ?? nativeProxy?.DCDChatManager;
     if (!chatModule || typeof chatModule.updateRows !== "function") {
