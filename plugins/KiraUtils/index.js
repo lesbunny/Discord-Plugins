@@ -213,6 +213,14 @@ const unLoadDatas = () => {
 
 export default {
     onLoad: () => {
+        storage.localEditClearOnRestart ??= false;
+        const localEditSession = (globalThis as any).__kiraUtilsLocalEditSession ??=
+            `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        if (storage.localEditClearOnRestart && storage.localEditSessionId && storage.localEditSessionId !== localEditSession) {
+            storage.localEdits = {};
+        }
+        storage.localEditSessionId = localEditSession;
+        storage.localEdits ??= {};
         isEnabled = true;
         activeUnpatches = runFactories(basePatchFactories);
         setFeature("notype", !!storage?.toggle?.notype);
