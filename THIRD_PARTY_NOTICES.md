@@ -24,3 +24,18 @@ The Staff Tags feature integrated into KiraUtils is adapted from the Staff Tags 
 ## Kira's modifications
 
 Changes in this repository include persistent local-only history storage, settings and toggle fixes, plugin lifecycle cleanup, compatibility guards, the local-edit UI changes, and integration glue. These changes do not transfer ownership of the upstream source code to Kira.
+
+
+## shipwr3ckd/revengeplugin integrations — CC0 1.0 Universal
+
+Source: https://github.com/shipwr3ckd/revengeplugin
+
+The KiraUtils versions of HideBlockedAndIgnoredMessages, CopyBios, AnonymousFileNames, Silent Messages, and catbox.moe are adaptations of plugins from this CC0-licensed repository. Original contributors include Zykrah, シグマ siguma, and maisy; Kira's integration glue and compatibility changes are separate modifications. The upstream repository was archived, so these integrations are maintained as a local fork and may require future compatibility updates.
+
+The original project declares CC0 1.0 Universal. See https://creativecommons.org/publicdomain/zero/1.0/ for its terms.
+
+## Lioncat6/revenge-plugins Hidden Channels
+
+Source: https://github.com/Lioncat6/revenge-plugins/tree/gh-pages/hidden-channels
+
+The Hidden Channels integration is adapted from the published plugin by cloudburst, Training Dummy, and Lioncat6. The upstream repository uses CC0 1.0 Universal. Its client-side permission display behavior cannot grant server permissions or retrieve messages Discord has not delivered to the client.
