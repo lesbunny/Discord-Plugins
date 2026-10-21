@@ -206,38 +206,60 @@ function openEditor(message: any): void {
     }
 }
 
-const isRow = (element: any): boolean =>
-    !!element?.props && typeof element.props.label === "string" && typeof element.props.onPress === "function";
+const isRow = (element: any): boolean => {
+    if (!element?.props) return false;
+    const name = String(element.type?.name ?? element.type?.displayName ?? "");
+    const props = element.props;
+    const hasText = [props.label, props.message, props.text, props.title]
+        .some(value => typeof value === "string");
+    const hasAction = [props.onPress, props.onPressRow, props.action]
+        .some(value => typeof value === "function");
+    return /ButtonRow|ActionSheetRow|TableRow/.test(name) || (hasText && hasAction);
+};
 
 function addMenuRow(tree: any, message: any): any {
     const rows = findInReactTree(tree, (node: any) =>
-        Array.isArray(node) && node.some(isRow)
+        Array.isArray(node) && (
+            node[0]?.type?.name === "ButtonRow" ||
+            node[0]?.type?.displayName === "ButtonRow" ||
+            node.some(isRow)
+        )
     );
     if (!rows) {
-        console.warn("[localedit] Found the message menu but not its action-row list.");
+        console.warn("[localedit] Could not find an action-row array in the message menu.");
         return tree;
     }
-    if (rows.some((row: any) => row?.key === "local-edit-remastered-edit")) return tree;
+    if (rows.some((row: any) => String(row?.key ?? "").includes("local-edit-remastered-edit"))) return tree;
 
-    const template = rows.find(isRow);
-    if (!template) return tree;
-    const currentUser = UserStore?.getCurrentUser?.();
-    const authorId = message?.author?.id ?? message?.authorId;
-    if (pluginStorage.showOwnMessageAction === false && currentUser?.id && authorId && String(currentUser.id) === String(authorId)) return tree;
+    const template = rows.find(isRow) ?? rows.find((row: any) =>
+        /ButtonRow|ActionSheetRow|TableRow/.test(String(row?.type?.name ?? row?.type?.displayName ?? ""))
+    );
+    if (!template) {
+        console.warn("[localedit] Found a menu array but no cloneable row.");
+        return tree;
+    }
 
     const onPress = () => {
+        console.log("[localedit] Edit Locally tapped for", String(message?.id ?? "?"));
         try { ActionSheet?.hideActionSheet?.(); } catch {}
         openEditor(message);
     };
     const row = React.cloneElement(template, {
         key: "local-edit-remastered-edit",
         label: "Edit Locally",
+        message: "Edit Locally",
+        text: "Edit Locally",
+        title: "Edit Locally",
         onPress,
+        onPressRow: onPress,
+        action: onPress,
     });
     const unreadIndex = rows.findIndex((item: any) =>
-        /mark unread/i.test(String(item?.props?.label ?? item?.props?.message ?? ""))
+        /mark unread/i.test(String(item?.props?.label ?? item?.props?.message ?? item?.props?.text ?? ""))
     );
     rows.splice(unreadIndex < 0 ? rows.length : unreadIndex, 0, row);
+    console.log("[localedit] Added Edit Locally to message menu; row type:",
+        String(template.type?.name ?? template.type?.displayName ?? "unknown"));
     return tree;
 }
 
@@ -361,7 +383,7 @@ function load(): void {
     }
     patchActionSheet();
     applyToLoaded();
-    console.log("[localedit] Loaded v1.2.2. Look for Edit Locally in another person's long-press menu.");
+    console.log("[localedit] Loaded v1.2.3. Look for Edit Locally in another person's long-press menu.");
 }
 
 export default {
