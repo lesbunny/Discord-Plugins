@@ -19,7 +19,7 @@ const liveFeatures = new Set([
     "copyBios", "catbox", "silentMessages", "anonymousFileNames", "hiddenChannels", "localEdit"
 ]);
 
-function setFeature(id: string, value: boolean) {
+function setFeature(id, value) {
     storage.toggle[id] = value;
     if (liveFeatures.has(id)) globalThis.__kiraUtilsController?.setFeature?.(id, value);
 }
@@ -83,12 +83,12 @@ export default function KiraUtilsSettings() {
         },
     ];
 
-    const row = (item: any) => (
+    const row = (item) => (
         <View key={item.id} style={{ paddingHorizontal: 2 }}>
             <FormRow
                 label={item.title}
                 subLabel={item.label}
-                trailing={<FormSwitch value={!!storage.toggle?.[item.id]} onValueChange={(value: boolean) => setFeature(item.id, value)} />}
+                trailing={<FormSwitch value={!!storage.toggle?.[item.id]} onValueChange={(value) => setFeature(item.id, value)} />}
             />
             {storage.toggle?.[item.id] && item.props && (
                 <View style={{ margin: 6, marginBottom: 10, padding: 10, borderRadius: 12, backgroundColor: "rgba(0,0,0,0.15)" }}>
@@ -105,14 +105,14 @@ export default function KiraUtilsSettings() {
             {item.id === "silentMessages" && storage.toggle.silentMessages && (
                 <View style={{ marginHorizontal: 12, marginBottom: 8 }}>
                     <FormSwitchRow label="Always send silently" value={!!storage.silentAlways} onValueChange={v => { storage.silentAlways = v; }} />
-                    <FormInput title="Add silent user/channel ID" placeholder="Discord ID" keyboardType="numeric" value={silentIdInput} onChange={(v: string) => setSilentIdInput(v.replace(/[^0-9]/g, ""))} />
+                    <FormInput title="Add silent user/channel ID" placeholder="Discord ID" keyboardType="numeric" value={silentIdInput} onChange={(v) => setSilentIdInput(v.replace(/[^0-9]/g, ""))} />
                     <FormRow label="Add ID to the silent list" subLabel="Tap after entering a 17–20 digit Discord ID." onPress={() => {
                         const id = silentIdInput.trim();
                         if (/^\d{17,20}$/.test(id) && !(storage.silentChannelIds ?? []).includes(id)) storage.silentChannelIds = [...(storage.silentChannelIds ?? []), id];
                         setSilentIdInput("");
                     }} />
                     {(storage.silentChannelIds ?? []).map((id: string) => (
-                        <FormRow key={id} label={id} trailing={<FormRow.Icon source={0} />} onPress={() => { storage.silentChannelIds = storage.silentChannelIds.filter((x: string) => x !== id); }} />
+                        <FormRow key={id} label={id} subLabel="Tap to remove from the silent list" onPress={() => { storage.silentChannelIds = storage.silentChannelIds.filter(x => x !== id); }} />
                     ))}
                 </View>
             )}
@@ -121,7 +121,7 @@ export default function KiraUtilsSettings() {
                     <FormSwitchRow label="Always upload to Catbox" value={!!storage.catboxAlwaysUpload} onValueChange={v => { storage.catboxAlwaysUpload = v; }} />
                     <FormSwitchRow label="Copy link to clipboard" value={storage.catboxCopy !== false} onValueChange={v => { storage.catboxCopy = v; }} />
                     <FormSwitchRow label="Insert link into next message" value={!!storage.catboxInsert} onValueChange={v => { storage.catboxInsert = v; }} />
-                    <FormInput title="Optional Catbox userhash" value={userhashInput} onChange={(v: string) => { setUserhashInput(v); storage.catboxUserhash = v; }} />
+                    <FormInput title="Optional Catbox userhash" value={userhashInput} onChange={(v) => { setUserhashInput(v); storage.catboxUserhash = v; }} />
                 </View>
             )}
             {item.id === "anonymousFileNames" && storage.toggle.anonymousFileNames && (
@@ -140,7 +140,7 @@ export default function KiraUtilsSettings() {
                     <FormSwitchRow label="Show Edit Locally on own messages" value={storage.localEditShowOwn !== false} onValueChange={v => { storage.localEditShowOwn = v; }} />
                     <FormRow label={"Saved local edits: " + Object.keys(storage.localEdits ?? {}).length} subLabel="Clear saved local display overrides." onPress={() => {
                         const edits = storage.localEdits ?? {};
-                        for (const [id, edit] of Object.entries(edits) as any) {
+                        for (const [id, edit] of Object.entries(edits)) {
                             if (edit.originalContent !== null) {
                                 try { FluxDispatcher.dispatch({ type: "MESSAGE_UPDATE", message: { id, channel_id: edit.channelId, content: edit.originalContent }, __kiraLocalEdit: true }); } catch {}
                             }
