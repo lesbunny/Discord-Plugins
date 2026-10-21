@@ -286,6 +286,70 @@ export function startCatbox(): () => void {
     return () => cleanupAll(cleanups);
 }
 
+
+function realViewPermission(channel) {
+    const permissionModule = safeFind(findByProps, "getChannelPermissions", "can");
+    const viewChannel = constants?.Permissions?.VIEW_CHANNEL;
+    if (!permissionModule || viewChannel == null || !channel) return true;
+    const previous = channel.realCheck;
+    channel.realCheck = true;
+    let allowed = true;
+    try { allowed = !!permissionModule.can(viewChannel, channel); } catch {}
+    if (previous === undefined) delete channel.realCheck; else channel.realCheck = previous;
+    return allowed;
+}
+
+export function startColorfulChannels() {
+    const cleanups = [];
+    storage.colorfulChannelsNsfwTag ??= true;
+    storage.colorfulChannelsColorIcons ??= true;
+    storage.colorfulChannelsFallbackColors ??= false;
+
+    const baseModule = safeFind(findByProps, "BaseChannelIcon");
+    if (baseModule && typeof baseModule.BaseChannelIcon === "function") {
+        cleanups.push(after("BaseChannelIcon", baseModule, ([props], rendered) => {
+            const source = props?.source;
+            const assetId = typeof source?.original === "number" ? source.original : typeof source === "number" ? source : null;
+            const name = assetId == null ? "" : String(getAssetByID(assetId)?.name ?? "");
+            if (!name || !storage.colorfulChannelsColorIcons || !React.isValidElement(rendered)) return rendered;
+
+            let tint = null;
+            if (/LockIcon$/.test(name)) tint = storage.colorfulChannelsFallbackColors ? "#f0b232" : "#e5b94f";
+            else if (/WarningIcon$/.test(name)) tint = storage.colorfulChannelsFallbackColors ? "#f23f43" : "#e05260";
+            else if (/ControllerIcon$/.test(name)) tint = storage.colorfulChannelsFallbackColors ? "#23a55a" : "#56b88b";
+            if (!tint) return rendered;
+
+            const channel = props?.channel;
+            const isTrulyHidden = !!(storage.toggle?.hiddenChannels && storage.hiddenChannelsShowIcon && channel && !realViewPermission(channel));
+            const styled = React.cloneElement(rendered, {
+                color: tint,
+                style: [rendered.props?.style, { tintColor: tint }]
+            });
+            if (!isTrulyHidden) return styled;
+            return React.createElement(ReactNative.View, { style: { position: "relative" } },
+                styled,
+                React.createElement(ReactNative.Text, {
+                    style: { position: "absolute", right: -3, bottom: -3, fontSize: 8, color: "#e5b94f", backgroundColor: "#211d2c", overflow: "hidden" }
+                }, "🔒")
+            );
+        }));
+    } else {
+        console.warn("[KiraUtils/ColorfulChannels] BaseChannelIcon was unavailable; icon coloring may not be supported on this client.");
+    }
+
+    const ChannelInfo = safeFind(findByName, "ChannelInfo", false);
+    if (ChannelInfo) {
+        cleanups.push(after("default", ChannelInfo, ([props], rendered) => {
+            if (!storage.colorfulChannelsNsfwTag || !props?.channel?.nsfw_ || !React.isValidElement(rendered)) return rendered;
+            const badge = React.createElement(ReactNative.View, {
+                style: { alignSelf: "flex-start", backgroundColor: "#b52b3a", borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1, marginBottom: 3 }
+            }, React.createElement(ReactNative.Text, { style: { color: "#ffffff", fontSize: 10, fontWeight: "800" } }, "NSFW"));
+            return React.createElement(React.Fragment, null, badge, rendered);
+        }));
+    }
+    return () => cleanupAll(cleanups);
+}
+
 export function startHiddenChannels() {
     const cleanups = [];
     const module = safeFind(findByProps, "getChannelPermissions", "can");
@@ -298,7 +362,6 @@ export function startHiddenChannels() {
         return () => {};
     }
     storage.hiddenChannelsShowIcon ??= true;
-    storage.hiddenChannelsShowPopup ??= true;
     storage.hiddenChannelsShowPopup ??= true;
 
     const isHidden = channelOrId => {
