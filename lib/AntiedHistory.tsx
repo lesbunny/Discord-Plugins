@@ -78,7 +78,7 @@ export function createHistoryPlugin(options: HistoryOptions) {
             const label = String(storage.editedMessageBuffer || "`[ EDITED ]`");
             event.message = {
                 ...event.message,
-                content: `${oldContent}\\n\\n${label}\\n\\n${newContent}`,
+                content: `${oldContent}\n\n${label}\n\n${newContent}`,
                 edited_timestamp: "invalid_timestamp",
                 guild_id: event.message?.guild_id ?? guildId,
                 message_reference: event.message?.message_reference ?? original.message_reference ?? original.messageReference ?? null,
