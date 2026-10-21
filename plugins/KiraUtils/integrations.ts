@@ -332,6 +332,12 @@ export function startHiddenChannels() {
 }
 
 export function startLocalEdit() {
+    const runtime = globalThis as any;
+    if (runtime.__lesbunnyLocalEditPlugins?.remastered) {
+        storage.toggle.localEdit = false;
+        showToast("Standalone Local Edit is already enabled. Disable it to use KiraUtils Local Edit.");
+        return () => {};
+    }
     storage.localEdits ??= {};
     storage.localEditShowOwn ??= true;
     const cleanups = [];
