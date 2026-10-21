@@ -12,8 +12,8 @@ import { getUser } from "./patches/getUser";
 import { stopPlugin } from "@vendetta/plugins";
 import sendMessage from "./patches/sendMessage";
 import { FluxDispatcher } from "@vendetta/metro/common";
-import { start as startStaffTags, stop as stopStaffTags } from "./staffTags";
-import tenorGifFix from "./nexx/tenorGifFix";
+import { start as startStaffTags, stop as stopStaffTags } from "./staffTags/index.ts";
+import tenorGifFix from "./nexx/tenorGifFix.ts";
 
 makeDefaults(storage, {
 	toggle: {
