@@ -1,104 +1,94 @@
-# シグマ siguma's revenge/bunny/kettu plugins.
-A few vendetta plugins have been forked and are being maintained to work with its successors [Revenge](https://github.com/revenge-mod/revenge-bundle) and [Kettu](https://github.com/C0C0B01/Kettu). Credit goes to the plugin devs for their respective work.
+# Kira's Revenge / Kettu Plugins
 
-# How to install?
-Copy and paste the plugin URL into your Discord client's Plugins page.
+A maintained collection of client-side plugins for Revenge-, Kettu-, and Vendetta-based Discord clients. The collection includes original work and clearly credited adaptations of upstream plugins.
 
-# Plugins
-## HideBlockedAndIgnoredMessages
-A plugin that removes the \`X blocked or ignored message/s\` prompt and replies to the blocked or ignored messages from chat (optional in plugin settings).
+## Install
 
-> https://shipwr3ckd.github.io/revengeplugin/HideBlockedAndIgnoredMessages/
-<h3>
-<details>
-  <summary>Preview</summary>
-  <p>
-    <img src="./images/HideBlockedAndIgnoredMessages.png/" width="300" />
-</details>
-</h3>
+Open your compatible client's **Plugins** page and paste the plugin's install URL.
 
-## CopyBios
+## Kira-maintained plugins
+
+### Local Edit Remastered
+Locally change how messages appear on your own device. The changes are not sent as Discord edits. The editor is full-screen where the client supports it, the message-menu item is placed before Reply/Forward when those rows are found, and saved edits persist across restarts by default. An opt-in setting clears local edits at the next app session.
+
+Install page: https://lesbunny.github.io/revengeplugin/localedit/  
+Source: https://github.com/lesbunny/Discord-Plugins/tree/master/plugins/localedit
+
+### KiraUtils
+A bundled utility collection based on AzzyUtils, with repaired patch cleanup and live toggles for Staff Tags and the NexxUtils-inspired Tenor GIF Fix.
+
+Install page: https://lesbunny.github.io/revengeplugin/kirautils/  
+Source: https://github.com/lesbunny/Discord-Plugins/tree/master/plugins/KiraUtils
+
+### AntiEd
+Persistent local edit/deletion history, with an optional inline view of the previous message text when a message is edited. Logs and settings stay in plugin storage across app restarts. Inline annotations are a local display change only.
+
+Install page: https://lesbunny.github.io/revengeplugin/antied/  
+Source: https://github.com/lesbunny/Discord-Plugins/tree/master/plugins/antied
+
+### AntiEd Zero
+A persistent history viewer for locally recorded message edits and deletions. The settings page can filter what is recorded and clear saved history. The plugin does not upload its history.
+
+Install page: https://lesbunny.github.io/revengeplugin/antiedzero/  
+Source: https://github.com/lesbunny/Discord-Plugins/tree/master/plugins/antiedzero
+
+## Other plugins in the collection
+
+### HideBlockedAndIgnoredMessages
+Removes the “X blocked or ignored messages” prompt and can optionally reply to blocked or ignored messages from chat.
+
+Install: https://shipwr3ckd.github.io/revengeplugin/HideBlockedAndIgnoredMessages/
+
+### CopyBios
 Copy bio text.
 
-> https://shipwr3ckd.github.io/revengeplugin/CopyBios/
-<h3>
-<details>
-  <summary>Preview</summary>
-  <p>
-    <img src="./images/CopyBios.png/" width="300" />
-  </p>
-</details>
-</h3>
+Install: https://shipwr3ckd.github.io/revengeplugin/CopyBios/
 
-## catbox.moe
-Upload your silly ahh files larger than 10MBs to catbox.moe.
+### catbox.moe
+Upload files larger than 10 MB to catbox.moe.
 
-> https://shipwr3ckd.github.io/revengeplugin/catbox.moe/
-<h3>
-<details>
-  <summary>Preview</summary>
-  <p>
-    <img src="./images/catbox.moe.gif/" width="300" />
-  </p>
-</details>
-</h3>
+Install: https://shipwr3ckd.github.io/revengeplugin/catbox.moe/
 
-## Silent Messages
+### Silent Messages
 Send messages without notifying the receiver.
 
-> https://shipwr3ckd.github.io/revengeplugin/silentmessages/
+Install: https://shipwr3ckd.github.io/revengeplugin/silentmessages/
 
-## Rich Presence
+### Rich Presence
 Sets Discord Rich Presence for your profile.
 
-> https://shipwr3ckd.github.io/revengeplugin/RichPresence/
-<h3>
-<details>
-  <summary>Preview</summary>
-  <p>
-    <img src="./images/RichPresence.png/" width="300" />
-  </p>
-</details>
-</h3>
+Install: https://shipwr3ckd.github.io/revengeplugin/RichPresence/
 
-## NSFW Blur
+### NSFW Blur
 Blur image previews and disable embed media in NSFW channels.
 
-> https://shipwr3ckd.github.io/revengeplugin/nsfw-blur
+Install: https://shipwr3ckd.github.io/revengeplugin/nsfw-blur
 
-## Local Edit Remastered
-Edit other people's messages locally on your device. Edits are persisted locally and are never sent to Discord.
+### AnonymousFileNames
+Randomises file names before uploading.
 
-> https://lesbunny.github.io/revengeplugin/localedit/
+Install: https://shipwr3ckd.github.io/revengeplugin/AnonymousFileNames
 
-<details>
-  <summary>Preview</summary>
-  <p>
-    <img src="./images/localedit.gif/" width="300" />
-  </p>
-</details>
+### AudioBookShelfRichPresence
+Rich presence for AudioBookShelf media servers.
 
-## AnonymousFileNames
-Randomises file names before you upload them.
+Install: https://shipwr3ckd.github.io/revengeplugin/ABSRPC
 
-> https://shipwr3ckd.github.io/revengeplugin/AnonymousFileNames
+### Custom Voice Messages
+Allows sending audio as voice messages.
 
-## AudioBookShelfRichPresence
-Rich presence for AudioBookShelf media server.
+Install: https://shipwr3ckd.github.io/revengeplugin/customVoiceMessages
 
-> https://shipwr3ckd.github.io/revengeplugin/ABSRPC
+### Staff Tags
+Shows extra tags for staff members. KiraUtils includes an opt-in integrated version.
 
-## Custom Voice Messages
-Allows sending any audio as a voice message.
+Install: https://shipwr3ckd.github.io/revengeplugin/staff-tags
 
-> https://shipwr3ckd.github.io/revengeplugin/customVoiceMessages
+### FakeProfileThemesAndEffects
+Enables profile theming and profile effects by hiding colors and effect IDs in the About Me section using invisible, zero-width characters.
 
-## Staff Tags
-Shows extra tags for staff members.
+Install: https://shipwr3ckd.github.io/FPTE/FakeProfileThemesAndEffects
 
-> https://shipwr3ckd.github.io/revengeplugin/staff-tags
+## Credits and licensing
 
-## FakeProfileThemesAndEffects
-Allows profile theming and the usage of profile effects by hiding the colors and effect ID in your About Me using invisible, zero-width characters.
-
-> https://shipwr3ckd.github.io/FPTE/FakeProfileThemesAndEffects
+Upstream code remains credited and subject to its original license. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the preserved license texts in `licenses/` before redistributing or publishing modified versions.
