@@ -11,6 +11,17 @@ const UpdateLog = {
     "Added MiniMod timeout-status indicators to chat rows",
     "Added an immediate on/off setting for MiniMod",
     "Aligned Tenor GIF URL conversion with the upstream implementation"
+  ],
+  "2.2.0": [
+    "Added Hide Blocked/ignored messages, Copy Bios, Catbox, Silent Messages, Anonymous File Names and Hidden Channels",
+    "Added local editing through the normal message composer",
+    "Grouped settings by feature area",
+    "Added cleanup to the shared Catbox/anonymous-filename upload hook"
+  ],
+  "2.3.0": [
+    "Added opt-in clearing of KiraUtils local edits on app restart",
+    "Prevented duplicate local-edit hooks when the standalone plugin is enabled",
+    "Hardened the native edit-action lookup and Hidden Channels display toggle"
   ]
 };
 export default UpdateLog;
