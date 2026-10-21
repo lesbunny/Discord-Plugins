@@ -41,6 +41,13 @@ export default () => {
         createList("staffTags", "Staff Tags", "Show owner, admin, staff and moderator tags", null, null),
         createList("tenorGifFix", "Tenor GIF Fix", "Download Tenor GIFs as GIFs instead of videos", null, null),
         createList("minimod", "MiniMod", "Show timeout status indicators in chat rows", null, null),
+        createList("hideBlocked", "Hide blocked / ignored messages", "Hide filtered messages and replies", null, null),
+        createList("copyBios", "Copy Bios", "Select and copy profile bio text", null, null),
+        createList("catbox", "catbox.moe", "Upload large files to Catbox and copy/send the link", null, null),
+        createList("silentMessages", "Silent Messages", "Add @silent to all messages or selected chats", null, null),
+        createList("anonymousFileNames", "Anonymous File Names", "Randomise upload filenames while preserving extensions", null, null),
+        createList("hiddenChannels", "Hidden Channels", "Allow opening channels hidden by view permissions", null, null),
+        createList("localEdit", "Local Edit", "Edit a message using the normal composer but save locally", null, null),
 		createList("ralert", "Reply Alert", "Toggle Settings", null, ReplyAlertSetting),
 		createList("customMention", "Custom Mentions", "Toggle Custom Mentions Settings", null, CustomMentionsSetting),
 		createList("removeDecor", "I HATE AVATAR DECORATIONS", "Toggle Remove Avatar Decoration", null, null),
@@ -80,7 +87,7 @@ export default () => {
 										value={storage.toggle[element?.id]}
 										onValueChange={(value) => {
                                             storage.toggle[element?.id] = value;
-                                            if (["notype", "staffTags", "tenorGifFix", "minimod"].includes(element?.id)) {
+                                            if (["notype", "staffTags", "tenorGifFix", "minimod", "hideBlocked", "copyBios", "catbox", "silentMessages", "anonymousFileNames", "hiddenChannels", "localEdit"].includes(element?.id)) {
                                                 globalThis.__kiraUtilsController?.setFeature?.(element.id, value);
                                             }
                                         }}
