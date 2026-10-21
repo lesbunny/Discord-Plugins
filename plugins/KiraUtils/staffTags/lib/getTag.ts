@@ -1,5 +1,6 @@
 import { findByProps, findByStoreName } from "@vendetta/metro";
-import { chroma, constants, i18n } from "@vendetta/metro/common";
+import * as MetroCommon from "@vendetta/metro/common";
+import { chroma, constants } from "@vendetta/metro/common";
 import { storage } from "@vendetta/plugin";
 import { rawColors } from "@vendetta/ui";
 
@@ -9,14 +10,22 @@ const computePermissions = findByProps("computePermissions", "canEveryoneRole")?
 
 const GuildMemberStore = findByStoreName("GuildMemberStore")
 
-export const BUILT_IN_TAGS = [
-    i18n.Messages.AI_TAG,
-    i18n.Messages.BOT_TAG_BOT,
-    i18n.Messages.BOT_TAG_SERVER,
-    i18n.Messages.SYSTEM_DM_TAG_SYSTEM,
-    i18n.Messages.GUILD_AUTOMOD_USER_BADGE_TEXT,
-    i18n.Messages.REMIXING_TAG
-]
+// Access i18n lazily: some current client builds expose it through a getter that throws.
+export const BUILT_IN_TAGS = (() => {
+    try {
+        const messages = (MetroCommon as any).i18n.Messages;
+        return [
+            messages.AI_TAG,
+            messages.BOT_TAG_BOT,
+            messages.BOT_TAG_SERVER,
+            messages.SYSTEM_DM_TAG_SYSTEM,
+            messages.GUILD_AUTOMOD_USER_BADGE_TEXT,
+            messages.REMIXING_TAG,
+        ].filter(Boolean);
+    } catch {
+        return [];
+    }
+})();
 
 interface Tag {
     text: string
