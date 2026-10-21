@@ -1,7 +1,7 @@
 {
   "name": "KiraUtils",
-  "description": "A maintained collection of chat, UI, privacy, and quality-of-life utilities for Revenge/Kettu-based clients.",
-  "version": "2.0.0",
+  "description": "A toggleable utility collection adapted from AzzyUtils and NexxUtils, with Staff Tags, Tenor GIF Fix, and MiniMod timeout indicators.",
+  "version": "2.1.0",
   "main": "index.js",
   "authors": [
     {
