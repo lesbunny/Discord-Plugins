@@ -412,6 +412,252 @@ export function startHiddenChannels() {
     return () => cleanupAll(cleanups);
 }
 
+
+export function startSendSpotifyInvite() {
+    const cleanups = [];
+    const header = safeFind(findByTypeName, "MediaKeyboardListHeader");
+    const spotify = safeFind(findByStoreName, "SpotifyStore");
+    const selectedChannel = safeFind(findByStoreName, "SelectedChannelStore");
+    const draft = safeFind(findByStoreName, "DraftStore");
+    const sender = safeFind(findByProps, "sendMessage", "revealMessage");
+    const clearDraft = safeFind(findByProps, "clearDraft");
+    if (!header || typeof sender?.sendMessage !== "function") {
+        console.warn("[KiraUtils/SpotifyInvite] Attachment-menu modules were not found.");
+        return () => {};
+    }
+
+    cleanups.push(after("type", header, (_args, rendered) => {
+        if (!React.isValidElement(rendered) || !rendered.props) return rendered;
+        const children = React.Children.toArray(rendered.props.children);
+        if (children.some(child => child?.key === "kira-spotify-invite")) return rendered;
+        const activity = spotify?.getActivity?.();
+        const button = React.createElement(ReactNative.Pressable, {
+            key: "kira-spotify-invite",
+            accessibilityRole: "button",
+            disabled: !activity?.party?.id,
+            onPress: () => {
+                try {
+                    const channelId = selectedChannel?.getChannelId?.();
+                    if (!channelId || !activity?.party?.id) return showToast("Start Spotify first to send a listening invite.");
+                    sender.sendMessage(channelId, {
+                        content: draft?.getDraft?.(channelId, 0) ?? "",
+                        tts: false,
+                        invalidEmojis: [],
+                        validNonShortcutEmojis: []
+                    }, true, { activityAction: { activity, type: 3 } });
+                    clearDraft?.clearDraft?.(channelId, 0);
+                    showToast("Spotify invite sent.");
+                } catch (error) {
+                    console.error("[KiraUtils/SpotifyInvite]", error);
+                    showToast("Could not send the Spotify invite.");
+                }
+            },
+            style: {
+                minHeight: 36, paddingHorizontal: 10, borderRadius: 10,
+                alignItems: "center", justifyContent: "center",
+                backgroundColor: activity?.party?.id ? "#1f8d54" : "#4a4651",
+                marginHorizontal: 5
+            }
+        }, React.createElement(ReactNative.Text, {
+            style: { color: "#ffffff", fontWeight: "700", fontSize: 12 }
+        }, "Spotify invite"));
+        return React.cloneElement(rendered, { children: [...children, button] });
+    }));
+    return () => cleanupAll(cleanups);
+}
+
+export function startSpotifyListenAlong() {
+    const cleanups = [];
+    const spotify = safeFind(findByStoreName, "SpotifyStore");
+    const spotifyProtocol = safeFind(findByStoreName, "SpotifyProtocolStore");
+    const userStore = safeFind(findByStoreName, "UserStore");
+    const player = safeFind(findByProps, "play", "sync");
+    const playModule = safeFind(findByProps, "SpotifyPlayButton");
+    const playOnSpotify = safeFind(findByProps, "PlayOnSpotifyButton");
+
+    const ListenButton = ({ activity }) => {
+        const targetId = String(activity?.party?.id ?? "").split(":")[1] || "";
+        const selfId = userStore?.getCurrentUser?.()?.id;
+        const current = spotify?.getActivity?.();
+        const playable = !!spotify?.hasConnectedAccount?.() &&
+            (!!spotify?.getActiveSocketAndDevice?.() || !!spotifyProtocol?.isProtocolRegistered?.());
+        const reason = !targetId ? "No Spotify activity found"
+            : String(selfId) === targetId ? "You cannot listen along with yourself"
+            : current?.party?.id === activity?.party?.id ? "Already listening along"
+            : !playable ? "Spotify is not detected" : "";
+
+        return React.createElement(ReactNative.Pressable, {
+            onPress: async () => {
+                if (reason) return showToast(reason);
+                try {
+                    if (spotify?.getActivity?.()) await player?.sync?.(activity, targetId);
+                    else await player?.play?.(activity, targetId);
+                    showToast("Spotify listen-along requested.");
+                } catch (error) {
+                    console.error("[KiraUtils/SpotifyListenAlong]", error);
+                    showToast("Spotify listen-along failed.");
+                }
+            },
+            disabled: !!reason,
+            style: {
+                marginTop: 6, paddingHorizontal: 10, paddingVertical: 7,
+                borderRadius: 9, backgroundColor: reason ? "#383440" : "#1f8d54",
+                alignSelf: "flex-start", opacity: reason ? 0.65 : 1
+            }
+        }, React.createElement(ReactNative.Text, {
+            style: { color: "#ffffff", fontSize: 12, fontWeight: "700" }
+        }, "Listen Along"));
+    };
+
+    const SpotifyPlayButton = playModule?.SpotifyPlayButton;
+    if (SpotifyPlayButton?.prototype?.render) {
+        cleanups.push(after("render", SpotifyPlayButton.prototype, (_args, rendered) => {
+            const activity = rendered?._owner?.stateNode?.props?.activity;
+            if (!activity?.party?.id || !React.isValidElement(rendered)) return rendered;
+            return React.createElement(React.Fragment, null,
+                rendered,
+                React.createElement(ListenButton, { activity, key: "kira-listen-along" })
+            );
+        }));
+    }
+    if (playOnSpotify && typeof playOnSpotify.PlayOnSpotifyButton === "function") {
+        cleanups.push(after("PlayOnSpotifyButton", playOnSpotify, ([props], rendered) => {
+            const activity = props?.activity;
+            if (!activity?.party?.id) return rendered;
+            return React.createElement(React.Fragment, null,
+                rendered,
+                React.createElement(ListenButton, { activity, key: "kira-listen-along" })
+            );
+        }));
+    }
+    if (!cleanups.length) console.warn("[KiraUtils/SpotifyListenAlong] Spotify play buttons were not available.");
+    return () => cleanupAll(cleanups);
+}
+
+export function startInfoCommands() {
+    const cleanups = [];
+    const api = safeFind(findByProps, "get", "post");
+    const sender = safeFind(findByProps, "sendMessage");
+    const send = async (ctx, embed) => {
+        const channelId = ctx?.channel?.id ?? ctx?.channelId;
+        if (!channelId || typeof sender?.sendMessage !== "function") {
+            showToast("Could not resolve the current channel.");
+            return;
+        }
+        await sender.sendMessage(channelId, { content: "", embeds: [embed] });
+    };
+    const field = (name, value, inline = true) => ({
+        name, value: String(value ?? "Unknown").slice(0, 1024), inline
+    });
+    const basicEmbed = { color: 0xb99bff, type: "rich" };
+    const commands = [
+        {
+            name: "userinfo",
+            description: "Get information about a user by ID",
+            options: [{ name: "user_id", description: "Discord user ID", type: 3, required: true }],
+            execute: async (args, ctx) => {
+                try {
+                    const id = String(args?.find(item => item.name === "user_id")?.value ?? "").trim();
+                    if (!/^\d{17,20}$/.test(id)) return showToast("Enter a valid Discord user ID.");
+                    const response = await api?.get?.({ url: "/users/" + id });
+                    const user = response?.body;
+                    if (!user?.id) return showToast("User not found.");
+                    const avatar = user.avatar
+                        ? "https://cdn.discordapp.com/avatars/" + id + "/" + user.avatar + "." + (user.avatar.startsWith("a_") ? "gif" : "png") + "?size=256"
+                        : undefined;
+                    const created = Math.floor((Number(BigInt(id) >> 22n) + 1420070400000) / 1000);
+                    await send(ctx, {
+                        ...basicEmbed, title: "User Information",
+                        author: { name: user.global_name || user.username, icon_url: avatar },
+                        thumbnail: avatar ? { url: avatar } : undefined,
+                        fields: [
+                            field("Username", user.username),
+                            field("Display name", user.global_name || user.username),
+                            field("ID", id, false),
+                            field("Bot", user.bot ? "Yes" : "No"),
+                            field("Created", "<t:" + created + ":R>", false),
+                            field("Public flags", user.public_flags ?? user.publicFlags ?? 0, false)
+                        ]
+                    });
+                } catch (error) {
+                    console.error("[KiraUtils/InfoCommands] User info failed", error);
+                    showToast("User info request failed.");
+                }
+            }
+        },
+        {
+            name: "serverinfo",
+            description: "Get information about a server by ID",
+            options: [{ name: "server_id", description: "Discord server ID", type: 3, required: true }],
+            execute: async (args, ctx) => {
+                try {
+                    const id = String(args?.find(item => item.name === "server_id")?.value ?? "").trim();
+                    if (!/^\d{17,20}$/.test(id)) return showToast("Enter a valid server ID.");
+                    const response = await api?.get?.({ url: "/guilds/" + id + "?with_counts=true" });
+                    const guild = response?.body;
+                    if (!guild?.id) return showToast("Server info is unavailable to this account.");
+                    const icon = guild.icon ? "https://cdn.discordapp.com/icons/" + id + "/" + guild.icon + ".png?size=256" : undefined;
+                    await send(ctx, {
+                        ...basicEmbed, title: guild.name || "Server Information",
+                        thumbnail: icon ? { url: icon } : undefined,
+                        fields: [
+                            field("ID", id, false), field("Owner ID", guild.owner_id),
+                            field("Members", guild.approximate_member_count ?? guild.member_count ?? "Unknown"),
+                            field("Online", guild.approximate_presence_count ?? "Unknown"),
+                            field("Verification", guild.verification_level ?? "Unknown"),
+                            field("Features", (guild.features || []).slice(0, 12).join(", ") || "None", false)
+                        ]
+                    });
+                } catch (error) {
+                    console.error("[KiraUtils/InfoCommands] Server info failed", error);
+                    showToast("Server info request failed.");
+                }
+            }
+        },
+        {
+            name: "inviteinfo",
+            description: "Get information about a Discord invite",
+            options: [{ name: "invite_code", description: "Invite code or URL", type: 3, required: true }],
+            execute: async (args, ctx) => {
+                try {
+                    const raw = String(args?.find(item => item.name === "invite_code")?.value ?? "").trim();
+                    const code = raw.replace(/^https?:\/\/(?:www\.)?(?:discord\.gg|discord(?:app)?\.com\/invite)\//i, "").split(/[?#/]/)[0];
+                    if (!code || code.length > 64) return showToast("Enter a valid invite code or URL.");
+                    const response = await api?.get?.({ url: "/invites/" + encodeURIComponent(code) + "?with_counts=true&with_expiration=true" });
+                    const invite = response?.body;
+                    if (!invite) return showToast("Invite not found or unavailable.");
+                    const guild = invite.guild;
+                    const fields = [
+                        field("Invite code", code),
+                        field("Channel", invite.channel?.name || invite.channel?.id || "Unknown"),
+                        field("Expires", invite.expires_at || "Never"),
+                        field("Uses", invite.uses ?? "Unknown")
+                    ];
+                    if (guild) fields.unshift(field("Server", guild.name), field("Server ID", guild.id));
+                    if (invite.approximate_member_count != null) fields.push(field("Members", invite.approximate_member_count), field("Online", invite.approximate_presence_count ?? "Unknown"));
+                    await send(ctx, { ...basicEmbed, title: "Invite Information", description: guild?.description || undefined, fields });
+                } catch (error) {
+                    console.error("[KiraUtils/InfoCommands] Invite info failed", error);
+                    showToast("Invite info request failed.");
+                }
+            }
+        }
+    ];
+    for (const command of commands) {
+        try {
+            const unregister = registerCommand(command);
+            if (typeof unregister === "function") cleanups.push(unregister);
+        } catch (error) {
+            console.warn("[KiraUtils/InfoCommands] Could not register " + command.name, error);
+        }
+    }
+    return () => cleanupAll(cleanups);
+}
+
+export function startValidUserModule() {
+    return startValidUser();
+}
+
 export function startLocalEdit() {
     const runtime = globalThis as any;
     storage.localEditClearOnRestart ??= false;
