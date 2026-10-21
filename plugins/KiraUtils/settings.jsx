@@ -104,6 +104,13 @@ export default () => {
 				})
 			}
 			</View>
+            {storage.toggle.staffTags && (
+                <FormRow
+                    label="Use role colors for staff tags"
+                    subLabel="Color permission tags using the member's top role color"
+                    trailing={<FormSwitch value={!!storage.useRoleColor} onValueChange={value => { storage.useRoleColor = value; }} />}
+                />
+            )}
 			<FormDivider />
 		</ScrollView>
 	</>)
