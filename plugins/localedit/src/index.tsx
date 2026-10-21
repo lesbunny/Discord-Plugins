@@ -12,10 +12,11 @@ type LocalEdit = {
     content: string;
     originalContent: string | null;
 };
-type PluginStorage = { localEdits?: Record<string, LocalEdit> };
+type PluginStorage = { localEdits?: Record<string, LocalEdit>; showOwnMessageAction?: boolean };
 
 const pluginStorage = storage as typeof storage & PluginStorage;
 pluginStorage.localEdits ??= {};
+pluginStorage.showOwnMessageAction ??= true;
 const patches: Array<() => void> = [];
 const RN = ReactNative as any;
 const { View, Text, ScrollView, Pressable } = RN;
@@ -222,7 +223,7 @@ function addMenuRow(tree: any, message: any): any {
     if (!template) return tree;
     const currentUser = UserStore?.getCurrentUser?.();
     const authorId = message?.author?.id ?? message?.authorId;
-    if (currentUser?.id && authorId && String(currentUser.id) === String(authorId)) return tree;
+    if (pluginStorage.showOwnMessageAction === false && currentUser?.id && authorId && String(currentUser.id) === String(authorId)) return tree;
 
     const onPress = () => {
         try { ActionSheet?.hideActionSheet?.(); } catch {}
@@ -289,6 +290,11 @@ function Settings(): any {
         React.createElement(Text, { style: { fontSize: 22, fontWeight: "700", color: "#e5ddff", marginBottom: 8 } }, "Local Edit Remastered"),
         React.createElement(Text, { style: { color: "#c9c2dc", marginBottom: 16, lineHeight: 20 } },
             "These edits exist only on this device. They are never sent as Discord message edits."),
+        React.createElement(Pressable, {
+            onPress: () => { pluginStorage.showOwnMessageAction = !(pluginStorage.showOwnMessageAction ?? true); refresh((n: number) => n + 1); },
+            style: { alignSelf: "flex-start", backgroundColor: "#55456f", borderRadius: 20, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 16 },
+        }, React.createElement(Text, { style: { color: "#ffffff", fontWeight: "600" } },
+            "Show Edit Locally on my own messages: " + ((pluginStorage.showOwnMessageAction ?? true) ? "ON" : "OFF"))),
         React.createElement(Text, { style: { color: "#e5ddff", fontWeight: "600", marginBottom: 12 } }, "Saved local edits: " + entries.length),
         ...entries.map(([id, edit]) => React.createElement(View, {
             key: id,
@@ -303,7 +309,7 @@ function Settings(): any {
         )),
         entries.length === 0
             ? React.createElement(Text, { style: { color: "#aaa2bf", fontStyle: "italic" } },
-                "No local edits yet. Long-press someone else's message and choose Edit Locally.")
+                "No local edits yet. Long-press any message and choose Edit Locally.")
             : null,
     );
 }
@@ -355,7 +361,7 @@ function load(): void {
     }
     patchActionSheet();
     applyToLoaded();
-    console.log("[localedit] Loaded v1.2.0. Look for Edit Locally in another person's long-press menu.");
+    console.log("[localedit] Loaded v1.2.1. Look for Edit Locally in another person's long-press menu.");
 }
 
 export default {
