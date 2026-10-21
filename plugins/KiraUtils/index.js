@@ -116,16 +116,16 @@ const clean = (cleanups) => {
 
 function startMiniMod() {
     const GuildMemberStore = findByStoreName("GuildMemberStore");
-    const nativeProxy = (globalThis as any).window?.nativeModuleProxy ?? (globalThis as any).nativeModuleProxy;
+    const nativeProxy = globalThis.window?.nativeModuleProxy ?? globalThis.nativeModuleProxy;
     const chatModule = nativeProxy?.NativeChatModule ?? nativeProxy?.DCDChatManager;
     if (!chatModule || typeof chatModule.updateRows !== "function") {
         console.warn("[KiraUtils/MiniMod] Native chat row module was not found on this client.");
         return () => {};
     }
-    return before("updateRows", chatModule, (args: any[]) => {
+    return before("updateRows", chatModule, args => {
         try {
             const rows = JSON.parse(args[1]);
-            if (!Array.isArray(rows) || !rows.some((row: any) => row && "message" in row)) return;
+            if (!Array.isArray(rows) || !rows.some((row) => row && "message" in row)) return;
             const timedOut = GuildMemberStore?.getCommunicationDisabledUserMap?.() ?? {};
             const now = Date.now();
             for (const row of rows) {
