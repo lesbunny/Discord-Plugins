@@ -19,6 +19,8 @@ import tenorGifFix from "./nexx/tenorGifFix.ts";
 import {
     startHideBlocked, startCopyBios, startCatbox, startSilentMessages,
     startAnonymousFileNames, startHiddenChannels, startLocalEdit,
+    startColorfulChannels, startSendSpotifyInvite, startSpotifyListenAlong,
+    startInfoCommands, startValidUserModule, startFastCopyUserID,
 } from "./integrations.ts";
 
 makeDefaults(storage, {
@@ -44,7 +46,13 @@ makeDefaults(storage, {
         silentMessages: false,
         anonymousFileNames: false,
         hiddenChannels: false,
-        localEdit: false,		
+        localEdit: false,
+        colorfulChannels: false,
+        sendSpotifyInvite: false,
+        spotifyListenAlong: false,
+        infoCommands: false,
+        validUser: false,
+        fastCopyUserID: false,		
 	},
 	utils: {
 		cactus: {
@@ -106,6 +114,12 @@ const integrationFactories = {
     anonymousFileNames: startAnonymousFileNames,
     hiddenChannels: startHiddenChannels,
     localEdit: startLocalEdit,
+    colorfulChannels: startColorfulChannels,
+    sendSpotifyInvite: startSendSpotifyInvite,
+    spotifyListenAlong: startSpotifyListenAlong,
+    infoCommands: startInfoCommands,
+    validUser: startValidUserModule,
+    fastCopyUserID: startFastCopyUserID,
 };
 
 export let isEnabled = false;
@@ -227,6 +241,7 @@ export default {
         setFeature("staffTags", !!storage?.toggle?.staffTags);
         setFeature("tenorGifFix", !!storage?.toggle?.tenorGifFix);
         setFeature("minimod", !!storage?.toggle?.minimod);
+        storage.minimodShowTimeouts ??= true;
         for (const feature of Object.keys(integrationFactories)) setFeature(feature, !!storage?.toggle?.[feature]);
         globalThis.__kiraUtilsController = { setFeature };
     },
