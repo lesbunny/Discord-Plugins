@@ -409,6 +409,10 @@ function unload(): void {
 
 function load(): void {
     const root = globalThis as any;
+    try {
+        const kiraController = root.__kiraUtilsLive ?? root.__kiraUtilsController;
+        kiraController?.setFeature?.("localEdit", false);
+    } catch {}
     const registry = root.__lesbunnyLocalEditPlugins ?? (root.__lesbunnyLocalEditPlugins = {});
     registry.remastered?.();
     const stop = () => {
