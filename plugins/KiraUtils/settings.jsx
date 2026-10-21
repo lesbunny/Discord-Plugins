@@ -40,6 +40,7 @@ export default () => {
 		createList("customClan", "CCB", "Toggle Custom Clan Badge", null, CustomClanBadge),
         createList("staffTags", "Staff Tags", "Show owner, admin, staff and moderator tags", null, null),
         createList("tenorGifFix", "Tenor GIF Fix", "Download Tenor GIFs as GIFs instead of videos", null, null),
+        createList("minimod", "MiniMod", "Show timeout status indicators in chat rows", null, null),
 		createList("ralert", "Reply Alert", "Toggle Settings", null, ReplyAlertSetting),
 		createList("customMention", "Custom Mentions", "Toggle Custom Mentions Settings", null, CustomMentionsSetting),
 		createList("removeDecor", "I HATE AVATAR DECORATIONS", "Toggle Remove Avatar Decoration", null, null),
@@ -79,7 +80,7 @@ export default () => {
 										value={storage.toggle[element?.id]}
 										onValueChange={(value) => {
                                             storage.toggle[element?.id] = value;
-                                            if (["notype", "staffTags", "tenorGifFix"].includes(element?.id)) {
+                                            if (["notype", "staffTags", "tenorGifFix", "minimod"].includes(element?.id)) {
                                                 globalThis.__kiraUtilsController?.setFeature?.(element.id, value);
                                             }
                                         }}
