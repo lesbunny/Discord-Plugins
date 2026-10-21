@@ -1,7 +1,7 @@
 import { storage } from "@vendetta/plugin";
 import { findByName, findByProps, findByStoreName } from "@vendetta/metro";
 import { after, before } from "@vendetta/patcher";
-import { React, ReactNative, FluxDispatcher } from "@vendetta/metro/common";
+import { React, ReactNative, FluxDispatcher, constants } from "@vendetta/metro/common";
 import { findInReactTree } from "@vendetta/utils";
 import { getAssetIDByName } from "@vendetta/ui/assets";
 import { showToast } from "@vendetta/ui/toasts";
@@ -138,10 +138,19 @@ export function startAnonymousFileNames() {
     const cloud = safeFind(findByProps, "CloudUpload");
     const proto = cloud?.CloudUpload?.prototype;
     if (proto && typeof proto.reactNativeCompressAndExtractData === "function") {
-        cleanups.push(before("reactNativeCompressAndExtractData", proto, args => {
-            anonymize(this, Number.parseInt(storage.anonymousFilenameLength, 10) || 8);
-            if (args?.[0]) anonymize(args[0], Number.parseInt(storage.anonymousFilenameLength, 10) || 8);
-        }));
+        const original = proto.reactNativeCompressAndExtractData;
+        const replacement = function (...args) {
+            if (storage.toggle?.anonymousFileNames !== false) {
+                const length = Number.parseInt(storage.anonymousFilenameLength, 10) || 8;
+                anonymize(this, length);
+                for (const arg of args) anonymize(arg, length);
+            }
+            return original.apply(this, args);
+        };
+        proto.reactNativeCompressAndExtractData = replacement;
+        cleanups.push(() => {
+            if (proto.reactNativeCompressAndExtractData === replacement) proto.reactNativeCompressAndExtractData = original;
+        });
     }
     return () => cleanupAll(cleanups);
 }
@@ -210,6 +219,7 @@ export function startCatbox() {
     if (prototype && typeof prototype.reactNativeCompressAndExtractData === "function") {
         const original = prototype.reactNativeCompressAndExtractData;
         const replacement = async function (...args) {
+            if (storage.toggle?.anonymousFileNames !== false) anonymize(this, Number.parseInt(storage.anonymousFilenameLength, 10) || 8);
             const size = Number(this?.preCompressionSize ?? this?.size ?? 0);
             if (!storage.catboxAlwaysUpload && size <= 10 * 1024 * 1024) return original.apply(this, args);
             if (size > 200 * 1024 * 1024) {
@@ -262,8 +272,7 @@ export function startHiddenChannels() {
     const module = safeFind(findByProps, "getChannelPermissions", "can") || safeFind(findByProps, "can", "initialize");
     const channelStore = safeFind(findByStoreName, "ChannelStore") || safeFind(findByProps, "getChannel");
     const channelTypes = safeFind(findByProps, "ChannelTypes")?.ChannelTypes || {};
-    const constants = ReactNative?.constants || safeFind(findByProps, "Permissions");
-    const permissions = safeFind(findByProps, "can")?.Permissions || safeFind(findByProps, "Permissions")?.Permissions || constants?.Permissions || {};
+    const permissions = constants?.Permissions || safeFind(findByProps, "Permissions")?.Permissions || {};
     const viewChannel = permissions.VIEW_CHANNEL;
     if (!module || typeof module.can !== "function" || viewChannel == null) {
         console.warn("[KiraUtils/HiddenChannels] Permission module is unavailable on this client.");
