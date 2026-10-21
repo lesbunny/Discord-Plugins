@@ -15,7 +15,7 @@ Upstream author credit: Angel / Angelw0lf / Angelica, as noted by individual plu
 Source: https://github.com/nexpid/RevengePlugins  
 Feature source: https://github.com/nexpid/RevengePlugins/tree/main/src/plugins/nexxutils
 
-The Tenor GIF Fix in KiraUtils is adapted from NexxUtils. Copyright and attribution remain with nexpid for the upstream contribution; Kira's integration and compatibility changes are separate modifications. The full CC BY 4.0 license is preserved in [licenses/NexxUtils-CC-BY-4.0.txt](licenses/NexxUtils-CC-BY-4.0.txt). See that license for attribution, change-marking, and other conditions.
+The Tenor GIF Fix and MiniMod timeout indicator in KiraUtils are adapted from NexxUtils. Copyright and attribution remain with nexpid for the upstream contribution; Kira's integration and compatibility changes are separate modifications. The full CC BY 4.0 license is preserved in [licenses/NexxUtils-CC-BY-4.0.txt](licenses/NexxUtils-CC-BY-4.0.txt). See that license for attribution, change-marking, and other conditions.
 
 ## Staff Tags
 
