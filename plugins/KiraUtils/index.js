@@ -19,7 +19,7 @@ import tenorGifFix from "./nexx/tenorGifFix.ts";
 import {
     startHideBlocked, startCopyBios, startCatbox, startSilentMessages,
     startAnonymousFileNames, startHiddenChannels, startLocalEdit,
-} from "./integrations.js";
+} from "./integrations.ts";
 
 makeDefaults(storage, {
 	toggle: {
