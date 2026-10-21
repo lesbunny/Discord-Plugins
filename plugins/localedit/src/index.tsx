@@ -167,8 +167,9 @@ function cancelNativeEditing(): void {
 }
 
 function openEditor(message: any): void {
-    const actions = safeFind(findByProps, "startEditMessage", "editMessage");
-    if (typeof actions?.startEditMessage !== "function" || typeof actions?.editMessage !== "function") {
+    const startActions = safeFind(findByProps, "startEditMessage");
+    const editActions = safeFind(findByProps, "editMessage") ?? startActions;
+    if (typeof startActions?.startEditMessage !== "function" || typeof editActions?.editMessage !== "function") {
         console.error("[localedit] Native Discord edit actions were not found.");
         return;
     }
@@ -178,8 +179,8 @@ function openEditor(message: any): void {
     const channel = String(message?.channel_id ?? message?.channelId ?? "");
     if (!id || !channel) return;
 
-    pendingNativeEdit = { id, channel, message, actions };
-    originalNativeEditMessage = actions.editMessage;
+    pendingNativeEdit = { id, channel, message, actions: editActions };
+    originalNativeEditMessage = editActions.editMessage;
     wrappedNativeEditMessage = function (...args: any[]) {
         const pending = pendingNativeEdit;
         const targetChannel = String(args?.[0] ?? "");
@@ -204,11 +205,11 @@ function openEditor(message: any): void {
         } catch {}
         return Promise.resolve();
     };
-    actions.editMessage = wrappedNativeEditMessage;
+    editActions.editMessage = wrappedNativeEditMessage;
     nativeEditTimeout = setTimeout(cancelNativeEditing, 120000);
 
     try {
-        actions.startEditMessage(channel, id, String(getEdit(id)?.content ?? message.content ?? ""));
+        startActions.startEditMessage(channel, id, String(getEdit(id)?.content ?? message.content ?? ""));
         logNativeEditorAvailable();
     } catch (error) {
         cancelNativeEditing();
