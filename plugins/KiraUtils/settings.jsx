@@ -137,6 +137,7 @@ export default function KiraUtilsSettings() {
             )}
             {item.id === "localEdit" && storage.toggle.localEdit && (
                 <View style={{ marginHorizontal: 12, marginBottom: 8 }}>
+                    <FormSwitchRow label="Clear local edits on app restart" value={!!storage.localEditClearOnRestart} onValueChange={v => { storage.localEditClearOnRestart = v; }} />
                     <FormSwitchRow label="Show Edit Locally on own messages" value={storage.localEditShowOwn !== false} onValueChange={v => { storage.localEditShowOwn = v; }} />
                     <FormRow label={"Saved local edits: " + Object.keys(storage.localEdits ?? {}).length} subLabel="Clear saved local display overrides." onPress={() => {
                         const edits = storage.localEdits ?? {};
