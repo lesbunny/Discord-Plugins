@@ -24,9 +24,15 @@ const UpdateLog = {
     "Hardened the native edit-action lookup and Hidden Channels display toggle"
   ]
   "2.4.0": [
-    "Added a confirmation prompt before opening hidden channels, with an optional toggle",
-    "Applied KiraUtils local-edit restart cleanup at plugin startup even if Local Edit is toggled off",
-    "Preserved native-composer editing and the opt-in restart-retention default"
+    "Added a confirmation prompt before opening hidden channels",
+    "Added opt-in restart cleanup for local edits",
+    "Hardened hidden-channel checks and native-composer local editing"
+  ],
+  "2.5.0": [
+    "Added Colorful Channels, Spotify invite and Listen Along helpers",
+    "Added InfoCommands, ValidUser mention repair and Fast Copy User ID",
+    "Rebuilt settings into NexxUtils-style category and module detail pages",
+    "Shortened the plugin description and made Kira the sole manifest author"
   ]
 };
 export default UpdateLog;
