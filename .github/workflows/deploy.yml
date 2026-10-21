@@ -1,4 +1,5 @@
 name: Build and deploy
+# Rebuild updated Local Edit source for current Discord module changes
 
 on:
   push:
