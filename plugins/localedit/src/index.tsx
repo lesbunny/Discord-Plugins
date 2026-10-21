@@ -221,88 +221,53 @@ function logNativeEditorAvailable(): void {
     console.log("[localedit] Opened the client's normal message editor; Save is intercepted locally.");
 }
 
-const isRow = (element: any): boolean => {
-    if (!element?.props) return false;
-    const name = String(element.type?.name ?? element.type?.displayName ?? "");
-    const props = element.props;
-    const hasText = [props.label, props.message, props.text, props.title]
-        .some(value => typeof value === "string");
-    const hasAction = [props.onPress, props.onPressRow, props.action]
-        .some(value => typeof value === "function");
-    return /ButtonRow|ActionSheetRow|TableRow/.test(name) || (hasText && hasAction);
-};
-
 function addMenuRow(tree: any, message: any): any {
-    const rows = findInReactTree(tree, (node: any) =>
-        Array.isArray(node) && (
-            node[0]?.type?.name === "ButtonRow" ||
-            node[0]?.type?.displayName === "ButtonRow" ||
-            node.some(isRow)
-        )
-    );
-    if (!rows) {
-        console.warn("[localedit] Could not find an action-row array in the message menu.");
+    const rowModule = safeFind(findByProps, "ActionSheetRow");
+    const ActionSheetRow = rowModule?.ActionSheetRow;
+    if (!ActionSheetRow) {
+        log.error("[localedit] ActionSheetRow module unavailable.");
         return tree;
     }
-    if (rows.some((row: any) => String(row?.key ?? "").includes("local-edit-remastered-edit"))) return tree;
+    const groups: any[] = findInReactTree(
+        tree,
+        (node: any) => Array.isArray(node) && node[0]?.type?.name === "ActionSheetRowGroup"
+    );
+    if (!groups?.length) {
+        log.warn("[localedit] Could not find action-sheet groups.");
+        return tree;
+    }
+    if (findInReactTree(tree, (node: any) => Array.isArray(node) && node.some((row: any) => row?.key === "local-edit-remastered-edit"))) {
+        return tree;
+    }
 
     const currentUser = UserStore?.getCurrentUser?.();
     const authorId = message?.author?.id ?? message?.authorId;
-    if (!(pluginStorage.showOwnMessageAction ?? true) &&
-        currentUser?.id != null && authorId != null &&
-        String(currentUser.id) === String(authorId)) return tree;
-
-    const template = rows.find((row: any) => {
-        const label = String(row?.props?.label ?? row?.props?.message ?? row?.props?.text ?? "");
-        return isRow(row) && /edit/i.test(label);
-    }) ?? rows.find(isRow) ?? rows.find((row: any) =>
-        /ButtonRow|ActionSheetRow|TableRow/.test(String(row?.type?.name ?? row?.type?.displayName ?? ""))
-    );
-    if (!template) {
-        console.warn("[localedit] Found a menu array but no cloneable row.");
-        return tree;
-    }
+    if (!storage.showOwnMessageAction && currentUser?.id != null && authorId != null && String(currentUser.id) === String(authorId)) return tree;
 
     const onPress = () => {
-        console.log("[localedit] Edit Locally tapped for", String(message?.id ?? "?"));
         try { ActionSheet?.hideActionSheet?.(); } catch {}
         openEditor(message);
     };
-
-    const rowIconModule = safeFind(findByProps, "ActionSheetRow");
-    const IconComponent = rowIconModule?.ActionSheetRow?.Icon;
-    let editIcon: any = template.props?.icon;
-    try {
-        const asset = getAssetIDByName("ic_edit_24px");
-        if (IconComponent && asset != null) {
-            editIcon = React.createElement(IconComponent, { source: asset });
-        }
-    } catch {}
-
-    const row = React.cloneElement(template, {
+    const iconId = getAssetIDByName("ic_edit_24px") ?? getAssetIDByName("ic_edit");
+    const button = React.createElement(ActionSheetRow, {
         key: "local-edit-remastered-edit",
         label: "Edit Locally",
-        message: "Edit Locally",
-        text: "Edit Locally",
-        title: "Edit Locally",
-        icon: editIcon,
+        icon: React.createElement(ActionSheetRow.Icon, { source: iconId }),
         onPress,
-        onPressRow: onPress,
-        action: onPress,
     });
 
-    const indexOfAction = (pattern: RegExp) => rows.findIndex((item: any) =>
-        pattern.test(String(item?.props?.label ?? item?.props?.message ?? item?.props?.text ?? item?.props?.title ?? ""))
+    const rows = findInReactTree(
+        groups[0],
+        (node: any) => Array.isArray(node) && node.some((row: any) => row?.type?.name === "ActionSheetRow")
     );
-    const replyIndex = indexOfAction(/\breply\b/i);
-    const forwardIndex = indexOfAction(/\bforward\b/i);
-    const actionIndexes = [replyIndex, forwardIndex].filter((i: number) => i >= 0);
-    const unreadIndex = indexOfAction(/mark unread/i);
-    const insertAt = actionIndexes.length
-        ? Math.min(...actionIndexes)
-        : unreadIndex >= 0 ? unreadIndex : rows.length;
-    rows.splice(insertAt, 0, row);
-    console.log("[localedit] Added Edit Locally above Reply/Forward where available.");
+    if (rows) {
+        const reply = rows.findIndex((row: any) => /reply/i.test(String(row?.props?.label ?? "")));
+        const forward = rows.findIndex((row: any) => /forward/i.test(String(row?.props?.label ?? "")));
+        const candidates = [reply, forward].filter(index => index >= 0);
+        rows.splice(candidates.length ? Math.min(...candidates) : 0, 0, button);
+    } else {
+        groups.unshift(React.createElement(ActionSheetRow.Group, null, button));
+    }
     return tree;
 }
 
