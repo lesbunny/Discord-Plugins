@@ -1,0 +1,20 @@
+{
+  "name": "AntiEd Zero",
+  "description": "A persistent local-only log of message edits and deletions with a history viewer in settings.",
+  "version": "2.0.0",
+  "main": "index.tsx",
+  "authors": [
+    {
+      "name": "Kira",
+      "id": "925904715525554206"
+    },
+    {
+      "name": "Angelw0lf (upstream AntiEd Zero)",
+      "id": "692632336961110087"
+    }
+  ],
+  "vendetta": {
+    "icon": "ic_edit_24px"
+  },
+  "upstream": "https://github.com/Angelix1/MP"
+}
