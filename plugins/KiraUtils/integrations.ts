@@ -452,6 +452,24 @@ export function startHiddenChannels() {
     } else {
         console.warn("[KiraUtils/HiddenChannels] transitionToGuild is unavailable on this client.");
     }
+
+    if (storage.hiddenChannelsShowIcon) {
+        const ChannelInfo = safeFind(findByName, "ChannelInfo", false);
+        if (ChannelInfo) cleanups.push(after("default", ChannelInfo, ([props], rendered) => {
+            const channel = props?.channel;
+            if (!channel || !isHidden(channel) || !React.isValidElement(rendered)) return rendered;
+            // Preserve the name and metadata; show a marker only when the real permission check fails.
+            return React.createElement(React.Fragment, null,
+                React.createElement(ReactNative.View, {
+                    style: { alignSelf: "flex-start", backgroundColor: "#2d2838", borderRadius: 6, paddingHorizontal: 5, paddingVertical: 2, marginBottom: 3 }
+                }, React.createElement(ReactNative.Text, {
+                    style: { color: "#e5b94f", fontSize: 10, fontWeight: "800" }
+                }, "Hidden channel")),
+                rendered
+            );
+        }));
+    }
+
     return () => cleanupAll(cleanups);
 }
 
