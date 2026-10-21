@@ -9,7 +9,7 @@ Open your compatible client's **Plugins** page and paste the plugin's install UR
 ## Kira-maintained plugins
 
 ### Local Edit Remastered
-Locally change how messages appear on your own device. The changes are not sent as Discord edits. The editor is full-screen where the client supports it, the message-menu item is placed before Reply/Forward when those rows are found, and saved edits persist across restarts by default. An opt-in setting clears local edits at the next app session.
+Locally change how messages appear on your own device. The changes are not sent as Discord edits. Edit Locally opens Discord's normal message composer, intercepts Save to store the edited text locally, appears before Reply/Forward when those rows are found, and persists across restarts by default. An opt-in setting clears local edits at the next app session.
 
 Install page: https://lesbunny.github.io/revengeplugin/localedit/  
 Source: https://github.com/lesbunny/Discord-Plugins/tree/master/plugins/localedit
