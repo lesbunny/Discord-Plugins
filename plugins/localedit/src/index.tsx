@@ -4,6 +4,7 @@ import { FluxDispatcher, ReactNative } from "@vendetta/metro/common";
 import { after, before } from "@vendetta/patcher";
 import { storage } from "@vendetta/plugin";
 import { findInReactTree } from "@vendetta/utils";
+import { getAssetIDByName } from "@vendetta/ui/assets";
 
 declare const vendetta: any;
 
@@ -12,11 +13,21 @@ type LocalEdit = {
     content: string;
     originalContent: string | null;
 };
-type PluginStorage = { localEdits?: Record<string, LocalEdit>; showOwnMessageAction?: boolean };
+type PluginStorage = { localEdits?: Record<string, LocalEdit>; showOwnMessageAction?: boolean; clearEditsOnRestart?: boolean; sessionId?: string };
 
 const pluginStorage = storage as typeof storage & PluginStorage;
 pluginStorage.localEdits ??= {};
 pluginStorage.showOwnMessageAction ??= true;
+pluginStorage.clearEditsOnRestart ??= false;
+const sessionGlobal = globalThis as any;
+const currentSessionId = sessionGlobal.__localEditSessionId ??=
+    `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+if (pluginStorage.clearEditsOnRestart &&
+    pluginStorage.sessionId &&
+    pluginStorage.sessionId !== currentSessionId) {
+    pluginStorage.localEdits = {};
+}
+pluginStorage.sessionId = currentSessionId;
 const patches: Array<() => void> = [];
 const RN = ReactNative as any;
 const { View, Text, ScrollView, Pressable } = RN;
@@ -136,6 +147,7 @@ function applyToLoaded(): void {
 }
 
 const EDITOR_KEY = "LocalEditRemasteredEditor";
+
 function editorParts(): any {
     const modal = safeFind(findByProps, "AlertModal", "AlertActions") ?? {};
     const alerts = safeFind(findByProps, "openAlert", "dismissAlert") ?? {};
@@ -149,48 +161,93 @@ function editorParts(): any {
     };
 }
 
-function EditorAlert({ parts, message, initial }: { parts: any; message: any; initial: string }): any {
+function InlineEditorScreen({ message, initial, close }: { message: any; initial: string; close: () => void }): any {
     const [value, setValue] = React.useState(initial);
-    const [error, setError] = React.useState("");
-    const { AlertModal, AlertActionButton, TextInput, Button, dismissAlert } = parts;
+    const inputRef = React.useRef(null);
+    const NativeTextInput = RN.TextInput ?? findSingleExport("TextInput");
     const save = () => {
-        if (typeof value !== "string" || !value.trim()) {
-            setError("Message text cannot be empty.");
-            return;
-        }
-        if (saveLocalEdit(message, value)) dismissAlert(EDITOR_KEY);
+        if (saveLocalEdit(message, value)) close();
     };
-    const cancel = () => dismissAlert(EDITOR_KEY);
-    const input = React.createElement(TextInput, {
-        autoFocus: true,
-        isClearable: true,
-        value,
-        onChange: (v: any) => {
-            setValue(typeof v === "string" ? v : v?.text ?? "");
-            if (error) setError("");
+    const text = (value: string, style: any = {}) =>
+        React.createElement(Text, { style: { color: "#f5f1ff", ...style } }, value);
+    const action = (label: string, onPress: () => void, primary = false) =>
+        React.createElement(Pressable, {
+            onPress,
+            accessibilityRole: "button",
+            style: {
+                minHeight: 44, borderRadius: 14, paddingHorizontal: 18,
+                alignItems: "center", justifyContent: "center",
+                backgroundColor: primary ? "#cbb7ff" : "#302a40",
+                borderWidth: primary ? 0 : 1, borderColor: "#51465f",
+            },
+        }, React.createElement(Text, {
+            style: { color: primary ? "#27163f" : "#f5efff", fontSize: 15, fontWeight: "700" },
+        }, label));
+    return React.createElement(RN.View, {
+        style: { flex: 1, backgroundColor: "#171421", paddingTop: 16, paddingBottom: 24, paddingHorizontal: 18 },
+    },
+        React.createElement(RN.View, {
+            style: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 18 },
         },
-        returnKeyType: "done",
-        onSubmitEditing: save,
-        state: error ? "error" : undefined,
-        errorMessage: error || undefined,
-    });
-    const actions = React.createElement(View, { style: { gap: 8 } },
-        Button
-            ? React.createElement(Button, { text: "Save locally", variant: "primary", onPress: save })
-            : React.createElement(AlertActionButton, { text: "Save locally", variant: "primary", onPress: save }),
-        React.createElement(AlertActionButton, { text: "Cancel", variant: "secondary", onPress: cancel }),
-    );
-    return React.createElement(AlertModal, {
-        title: "Edit message locally",
-        content: React.createElement(View, { style: { gap: 16 } },
-            React.createElement(Text, null, "Only your device will show this text."),
-            input,
+            action("Cancel", close, false),
+            text("Edit message", { fontSize: 18, fontWeight: "800" }),
+            action("Save", save, true),
         ),
-        actions,
-    });
+        text("Edit locally", { color: "#cbb7ff", fontSize: 13, fontWeight: "800", letterSpacing: 0.5, marginBottom: 6 }),
+        text("Only your device will display this version. Nothing is sent to Discord.", {
+            color: "#c9bfd9", fontSize: 13, lineHeight: 18, marginBottom: 14,
+        }),
+        React.createElement(RN.View, {
+            style: { flex: 1, minHeight: 240, borderRadius: 18, borderWidth: 1, borderColor: "#51465f", backgroundColor: "#211d2c", padding: 14 },
+        },
+            NativeTextInput ? React.createElement(NativeTextInput, {
+                ref: inputRef,
+                autoFocus: true,
+                multiline: true,
+                value,
+                onChangeText: (next: string) => setValue(String(next ?? "")),
+                placeholder: "Message content",
+                placeholderTextColor: "#9288a5",
+                selectionColor: "#cbb7ff",
+                textAlignVertical: "top",
+                underlineColorAndroid: "transparent",
+                style: { flex: 1, minHeight: 220, color: "#f5efff", fontSize: 16, lineHeight: 23, padding: 0 },
+            }) : text("This client does not expose a multiline text field. Please update the client and retry."),
+        ),
+        React.createElement(RN.View, { style: { paddingTop: 16 } },
+            text("This change is a local display override and will never edit the original Discord message.", {
+                color: "#aaa2bf", fontSize: 12, lineHeight: 17,
+            }),
+        ),
+    );
 }
 
 function openEditor(message: any): void {
+    const initial = getEdit(String(message.id))?.content ?? String(message.content ?? "");
+    const navigation = safeFind(findByProps, "pushModal", "popModal");
+    if (typeof navigation?.pushModal === "function" && typeof navigation?.popModal === "function") {
+        const Screen = () => React.createElement(InlineEditorScreen, {
+            message,
+            initial,
+            close: () => navigation.popModal(EDITOR_KEY),
+        });
+        try {
+            navigation.pushModal({
+                key: EDITOR_KEY,
+                modal: {
+                    key: EDITOR_KEY,
+                    modal: Screen,
+                    animation: "slide-up",
+                    shouldPersistUnderModals: false,
+                    closable: true,
+                },
+            });
+            return;
+        } catch (error) {
+            console.warn("[localedit] Native editor screen failed; falling back to the client alert editor.", error);
+        }
+    }
+
     const parts = editorParts();
     const missing = ["AlertModal", "AlertActionButton", "TextInput", "openAlert", "dismissAlert"]
         .filter(key => !parts[key]);
@@ -198,7 +255,42 @@ function openEditor(message: any): void {
         console.error("[localedit] Cannot open local editor; missing client modules:", missing.join(", "));
         return;
     }
-    const initial = getEdit(String(message.id))?.content ?? String(message.content ?? "");
+    function EditorAlert({ parts, message, initial }: { parts: any; message: any; initial: string }): any {
+        const [value, setValue] = React.useState(initial);
+        const [error, setError] = React.useState("");
+        const { AlertModal, AlertActionButton, TextInput, Button, dismissAlert } = parts;
+        const save = () => {
+            if (saveLocalEdit(message, value)) dismissAlert(EDITOR_KEY);
+        };
+        const cancel = () => dismissAlert(EDITOR_KEY);
+        const input = React.createElement(TextInput, {
+            autoFocus: true,
+            multiline: true,
+            numberOfLines: 8,
+            textAlignVertical: "top",
+            style: { minHeight: 180 },
+            isClearable: true,
+            value,
+            onChange: (v: any) => setValue(typeof v === "string" ? v : v?.text ?? ""),
+            returnKeyType: "default",
+            state: error ? "error" : undefined,
+            errorMessage: error || undefined,
+        });
+        const actions = React.createElement(View, { style: { flexDirection: "row", justifyContent: "flex-end", gap: 8 } },
+            Button
+                ? React.createElement(Button, { text: "Save locally", variant: "primary", onPress: save })
+                : React.createElement(AlertActionButton, { text: "Save locally", variant: "primary", onPress: save }),
+            React.createElement(AlertActionButton, { text: "Cancel", variant: "secondary", onPress: cancel }),
+        );
+        return React.createElement(AlertModal, {
+            title: "Edit message locally",
+            content: React.createElement(View, { style: { gap: 12 } },
+                React.createElement(Text, null, "Only your device will show this text."),
+                input,
+            ),
+            actions,
+        });
+    }
     try {
         parts.openAlert(EDITOR_KEY, React.createElement(EditorAlert, { parts, message, initial }));
     } catch (error) {
@@ -231,7 +323,16 @@ function addMenuRow(tree: any, message: any): any {
     }
     if (rows.some((row: any) => String(row?.key ?? "").includes("local-edit-remastered-edit"))) return tree;
 
-    const template = rows.find(isRow) ?? rows.find((row: any) =>
+    const currentUser = UserStore?.getCurrentUser?.();
+    const authorId = message?.author?.id ?? message?.authorId;
+    if (!(pluginStorage.showOwnMessageAction ?? true) &&
+        currentUser?.id != null && authorId != null &&
+        String(currentUser.id) === String(authorId)) return tree;
+
+    const template = rows.find((row: any) => {
+        const label = String(row?.props?.label ?? row?.props?.message ?? row?.props?.text ?? "");
+        return isRow(row) && /edit/i.test(label);
+    }) ?? rows.find(isRow) ?? rows.find((row: any) =>
         /ButtonRow|ActionSheetRow|TableRow/.test(String(row?.type?.name ?? row?.type?.displayName ?? ""))
     );
     if (!template) {
@@ -244,22 +345,41 @@ function addMenuRow(tree: any, message: any): any {
         try { ActionSheet?.hideActionSheet?.(); } catch {}
         openEditor(message);
     };
+
+    const rowIconModule = safeFind(findByProps, "ActionSheetRow");
+    const IconComponent = rowIconModule?.ActionSheetRow?.Icon;
+    let editIcon: any = template.props?.icon;
+    try {
+        const asset = getAssetIDByName("ic_edit_24px");
+        if (IconComponent && asset != null) {
+            editIcon = React.createElement(IconComponent, { source: asset });
+        }
+    } catch {}
+
     const row = React.cloneElement(template, {
         key: "local-edit-remastered-edit",
         label: "Edit Locally",
         message: "Edit Locally",
         text: "Edit Locally",
         title: "Edit Locally",
+        icon: editIcon,
         onPress,
         onPressRow: onPress,
         action: onPress,
     });
-    const unreadIndex = rows.findIndex((item: any) =>
-        /mark unread/i.test(String(item?.props?.label ?? item?.props?.message ?? item?.props?.text ?? ""))
+
+    const indexOfAction = (pattern: RegExp) => rows.findIndex((item: any) =>
+        pattern.test(String(item?.props?.label ?? item?.props?.message ?? item?.props?.text ?? item?.props?.title ?? ""))
     );
-    rows.splice(unreadIndex < 0 ? rows.length : unreadIndex, 0, row);
-    console.log("[localedit] Added Edit Locally to message menu; row type:",
-        String(template.type?.name ?? template.type?.displayName ?? "unknown"));
+    const replyIndex = indexOfAction(/\breply\b/i);
+    const forwardIndex = indexOfAction(/\bforward\b/i);
+    const actionIndexes = [replyIndex, forwardIndex].filter((i: number) => i >= 0);
+    const unreadIndex = indexOfAction(/mark unread/i);
+    const insertAt = actionIndexes.length
+        ? Math.min(...actionIndexes)
+        : unreadIndex >= 0 ? unreadIndex : rows.length;
+    rows.splice(insertAt, 0, row);
+    console.log("[localedit] Added Edit Locally above Reply/Forward where available.");
     return tree;
 }
 
@@ -317,6 +437,13 @@ function Settings(): any {
             style: { alignSelf: "flex-start", backgroundColor: "#55456f", borderRadius: 20, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 16 },
         }, React.createElement(Text, { style: { color: "#ffffff", fontWeight: "600" } },
             "Show Edit Locally on my own messages: " + ((pluginStorage.showOwnMessageAction ?? true) ? "ON" : "OFF"))),
+        React.createElement(Pressable, {
+            onPress: () => { pluginStorage.clearEditsOnRestart = !pluginStorage.clearEditsOnRestart; refresh((n: number) => n + 1); },
+            style: { alignSelf: "flex-start", backgroundColor: "#302a40", borderWidth: 1, borderColor: "#51465f", borderRadius: 20, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 16 },
+        }, React.createElement(Text, { style: { color: "#f5efff", fontWeight: "600" } },
+            "Clear local edits on app restart: " + (pluginStorage.clearEditsOnRestart ? "ON" : "OFF"))),
+        React.createElement(Text, { style: { color: "#c9bfd9", marginBottom: 16, fontSize: 12 } },
+            "Off by default, so local edits persist across restarts. Turn it on to keep them only for the current app session."),
         React.createElement(Text, { style: { color: "#e5ddff", fontWeight: "600", marginBottom: 12 } }, "Saved local edits: " + entries.length),
         ...entries.map(([id, edit]) => React.createElement(View, {
             key: id,
