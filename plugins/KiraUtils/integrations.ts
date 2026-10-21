@@ -126,14 +126,14 @@ function anonymize(file, length) {
     if (typeof target.name === "string") target.name = replacement;
 }
 export function startAnonymousFileNames() {
-    storage.nameLength ??= 8;
+    storage.anonymousFilenameLength ??= "8";
     const cleanups: Array<() => void> = [];
     const uploadModule = safeFind(findByProps, "uploadLocalFiles");
     if (typeof uploadModule?.uploadLocalFiles === "function") {
         cleanups.push(before("uploadLocalFiles", uploadModule, (args: any[]) => {
             const files = args?.[0]?.items ?? args?.[0]?.files ?? args?.[0]?.uploads;
             if (!Array.isArray(files)) return;
-            const length = Number.parseInt(storage.nameLength, 10) || 8;
+            const length = Number.parseInt(storage.anonymousFilenameLength ?? storage.nameLength ?? "8", 10) || 8;
             for (const file of files) anonymize(file, length);
         }));
     }
@@ -199,7 +199,7 @@ function ensureSharedUploadPatch(): void {
         const catboxEnabled = storage.toggle?.catbox === true;
 
         if (anonymousEnabled) {
-            const length = Number.parseInt(storage.nameLength ?? storage.anonymousFilenameLength ?? "8", 10) || 8;
+            const length = Number.parseInt(storage.anonymousFilenameLength ?? storage.nameLength ?? "8", 10) || 8;
             anonymize(this, length);
             for (const arg of args) anonymize(arg, length);
         }
